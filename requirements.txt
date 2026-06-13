@@ -1,0 +1,24 @@
+fastapi>=0.136,<1
+uvicorn[standard]>=0.49,<1
+jinja2>=3.1.6,<4
+python-multipart>=0.0.20,<1
+httpx>=0.28,<1
+beautifulsoup4>=4.14,<5
+lxml>=6.0,<7
+aiosqlite>=0.22,<1
+python-dotenv>=1.1,<2
+pydantic>=2.13,<3
+pydantic-settings>=2.14,<3
+pytest>=8.2,<9
+pytest-asyncio>=0.26,<1
+feedparser>=6.0.12,<7
+zstandard>=0.25,<1
+slowapi>=0.1.9,<1
+pdfminer.six
+markupsafe>=3,<4
+
+# Optional heavier NLP dependencies.
+# The app now works without them and falls back to lightweight generalized extraction.
+# Uncomment only if you explicitly want transformer / KeyBERT enrichment.
+# keybert>=0.8.5,<1
+# sentence-transformers>=5,<6
