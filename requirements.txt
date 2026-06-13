@@ -16,6 +16,5 @@ zstandard>=0.25,<1
 slowapi>=0.1.9,<1
 pdfminer.six
 markupsafe>=3,<4
-os
 keybert>=0.8.5,<1
 sentence-transformers>=5,<6
