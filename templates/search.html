@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+{% block title %}Live Career Intelligence — Horizon{% endblock %}
+
+{% block head %}
+<style>
+/* ── Search-specific overrides ── */
+.search-hero {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%);
+}
+.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 14px; padding: 20px; }
+.pill-source { display:inline-flex; align-items:center; gap:5px; font-size:10px; font-family:monospace;
+  border: 1px solid rgba(99,102,241,0.3); background:rgba(99,102,241,0.08);
+  color:#a5b4fc; padding:2px 8px; border-radius:20px; }
+.pill-live { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); color:#6ee7b7; }
+.badge-count { background:rgba(99,102,241,0.15); color:#a5b4fc; padding:2px 7px;
+  border-radius:6px; font-size:11px; font-family:monospace; font-weight:600; }
+.job-card { transition: border-color 0.2s, box-shadow 0.2s; cursor:pointer; }
+.job-card:hover { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 1px rgba(99,102,241,0.2); }
+.trend-bar { height:6px; border-radius:3px; background: linear-gradient(90deg, #6366f1, #a5b4fc); transition: width 0.8s ease; }
+.salary-bar { height:8px; border-radius:4px; background: linear-gradient(90deg, #10b981, #34d399); }
+.tab-btn { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:500; transition:all 0.2s; cursor:pointer;
+  border: 1px solid transparent; color: var(--color-muted); }
+.tab-btn.active { background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3); color:#a5b4fc; }
+.tab-btn:hover:not(.active) { background:rgba(255,255,255,0.04); color:var(--color-text); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius:6px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.source-dot { width:7px; height:7px; border-radius:50%; animation: pulse 2s infinite; }
+.dot-green { background:#10b981; box-shadow:0 0 6px #10b981; }
+.dot-amber { background:#f59e0b; }
+.dot-red { background:#ef4444; }
+#search-input { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--color-text); font-size:18px; padding: 16px 24px; border-radius:14px; width:100%;
+  transition: border-color 0.2s, box-shadow 0.2s; outline:none; }
+#search-input:focus { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+#search-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none;
+  padding:16px 32px; border-radius:14px; font-size:15px; font-weight:600; cursor:pointer;
+  transition: opacity 0.2s, transform 0.1s; white-space:nowrap; }
+#search-btn:hover { opacity:0.9; }
+#search-btn:active { transform:scale(0.98); }
+.stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 20px; }
+.stat-num { font-size:28px; font-weight:700; font-family:monospace; }
+.chip { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:20px;
+  font-size:12px; font-weight:500; border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04); color:var(--color-muted); cursor:pointer; transition:all 0.15s; }
+.chip:hover { border-color:rgba(99,102,241,0.4); color:#a5b4fc; background:rgba(99,102,241,0.08); }
+.loading-ring { width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);
+  border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto; }
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-hero min-h-screen">
+
+  <!-- ── HERO SEARCH ── -->
+  <section class="max-w-4xl mx-auto px-6 pt-20 pb-12 text-center">
+    <div class="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border bg-card/60 backdrop-blur px-3 py-1.5 rounded-full mb-8">
+      <span class="source-dot dot-green"></span>
+      Live market intelligence · 8 data sources · refreshed per query
+    </div>
+    <h1 class="font-head text-5xl sm:text-6xl font-extrabold text-text mb-4 tracking-tight leading-tight">
+      Search any career,<br/><span class="text-accent">get real data.</span>
+    </h1>
+    <p class="text-muted text-base max-w-xl mx-auto mb-10">
+      Type any job title or field. We scrape GitHub, HN Hiring, RemoteOK, USAJobs, Internshala, arXiv and more — live.
+    </p>
+
+    <!-- Search Box -->
+    <div class="flex gap-3 max-w-2xl mx-auto">
+      <input id="search-input" type="text" placeholder="e.g. Machine Learning Engineer, Data Scientist, DevOps..." autocomplete="off" />
+      <button id="search-btn" onclick="doSearch()">
+        <span id="btn-label">Search →</span>
+      </button>
+    </div>
+
+    <!-- Quick chips -->
+    <div class="flex flex-wrap justify-center gap-2 mt-5">
+      {% for q in ["ML Engineer", "Data Scientist", "DevOps Engineer", "Cybersecurity Analyst", "Frontend Developer", "AI Researcher", "Backend Engineer", "Bioinformatics", "SWE Intern", "ML Intern", "Product Manager", "UX Designer", "Blockchain Developer", "Game Developer", "Quantum Computing"] %}
+      <span class="chip" onclick="quickSearch('{{ q }}')">{{ q }}</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── RESULTS CONTAINER ── -->
+  <div id="results-container" class="max-w-7xl mx-auto px-4 sm:px-6 pb-20 hidden">
+
+    <!-- Top bar: query info + source badges -->
+    <div id="results-header" class="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 id="results-title" class="text-2xl font-bold text-text font-head"></h2>
+        <p id="results-sub" class="text-sm text-muted font-mono mt-1"></p>
+      </div>
+      <div id="source-badges" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div class="stat-card">
+        <div id="stat-jobs" class="stat-num text-accent">—</div>
+        <div class="text-xs text-muted mt-1">Live Jobs Found</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-internships" class="stat-num text-lime-400">—</div>
+        <div class="text-xs text-muted mt-1">Internships</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-scholarships" class="stat-num text-amber-400">—</div>
+        <div class="text-xs text-muted mt-1">Scholarships</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-sources" class="stat-num text-purple-400">—</div>
+        <div class="text-xs text-muted mt-1">Active Sources</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 mb-6 border-b border-border pb-4">
+      <button class="tab-btn active" onclick="switchTab('jobs', this)">💼 Jobs</button>
+      <button class="tab-btn" onclick="switchTab('internships', this)">🎓 Internships</button>
+      <button class="tab-btn" onclick="switchTab('salary', this)">💰 Salary</button>
+      <button class="tab-btn" onclick="switchTab('trends', this)">📈 Skill Trends</button>
+      <button class="tab-btn" onclick="switchTab('scholarships', this)">🏆 Scholarships</button>
+      <button class="tab-btn" onclick="switchTab('universities', this)">🏛️ Universities</button>
+      <button class="tab-btn" onclick="switchTab('research', this)">📄 Research</button>
+      <button class="tab-btn" onclick="switchTab('companies', this)">🏢 Companies</button>
+    </div>
+
+    <!-- ── TAB: JOBS ── -->
+    <div id="tab-jobs" class="tab-panel active">
+      <div id="jobs-grid" class="grid gap-4 md:grid-cols-2"></div>
+    </div>
+
+    <!-- ── TAB: INTERNSHIPS ── -->
+    <div id="tab-internships" class="tab-panel">
+      <div id="internships-grid" class="grid gap-4 md:grid-cols-2"></div>
+    </div>
+
+    <!-- ── TAB: SALARY ── -->
+    <div id="tab-salary" class="tab-panel">
+      <div id="salary-container" class="max-w-3xl space-y-5"></div>
+    </div>
+
+    <!-- ── TAB: SKILL TRENDS ── -->
+    <div id="tab-trends" class="tab-panel">
+      <div id="trends-container" class="grid gap-3 max-w-4xl"></div>
+    </div>
+
+    <!-- ── TAB: SCHOLARSHIPS ── -->
+    <div id="tab-scholarships" class="tab-panel">
+      <div id="scholarships-grid" class="grid gap-4 md:grid-cols-2"></div>
+    </div>
+
+    <!-- ── TAB: UNIVERSITIES ── -->
+    <div id="tab-universities" class="tab-panel">
+      <div id="universities-grid" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+
+    <!-- ── TAB: RESEARCH ── -->
+    <div id="tab-research" class="tab-panel">
+      <div id="research-list" class="space-y-4 max-w-3xl"></div>
+    </div>
+
+    <!-- ── TAB: COMPANIES ── -->
+    <div id="tab-companies" class="tab-panel">
+      <div id="companies-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loading-state" class="hidden max-w-2xl mx-auto px-6 py-20 text-center">
+    <div class="loading-ring mb-6"></div>
+    <p id="loading-msg" class="text-muted font-mono text-sm">Scraping live data across 8 sources…</p>
+    <div id="loading-sources" class="flex flex-wrap justify-center gap-2 mt-4 text-xs font-mono text-muted/50"></div>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-state" class="hidden max-w-xl mx-auto px-6 py-20 text-center">
+    <div class="text-4xl mb-4">⚠️</div>
+    <p id="error-msg" class="text-muted"></p>
+    <button onclick="doSearch()" class="mt-4 btn-ghost text-sm">Retry</button>
+  </div>
+
+</div>
+
+<script>
+const SOURCES = ["GitHub Trending","HN Hiring","arXiv","RemoteOK","WeWorkRemotely","USAJobs","Internshala"];
+let currentQuery = "";
+
+function quickSearch(q) {
+  document.getElementById("search-input").value = q;
+  doSearch();
+}
+
+document.getElementById("search-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch();
+});
+
+function switchTab(name, btn) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  btn.classList.add("active");
+}
+
+function setLoading(active) {
+  document.getElementById("loading-state").classList.toggle("hidden", !active);
+  document.getElementById("results-container").classList.toggle("hidden", active || true);
+  document.getElementById("error-state").classList.add("hidden");
+  const btn = document.getElementById("search-btn");
+  const label = document.getElementById("btn-label");
+  btn.disabled = active;
+  label.textContent = active ? "Searching…" : "Search →";
+  if (active) {
+    const src = document.getElementById("loading-sources");
+    src.innerHTML = SOURCES.map(s => `<span class="pill-source">${s}</span>`).join("");
+  }
+}
+
+function showError(msg) {
+  document.getElementById("loading-state").classList.add("hidden");
+  document.getElementById("results-container").classList.add("hidden");
+  document.getElementById("error-state").classList.remove("hidden");
+  document.getElementById("error-msg").textContent = msg;
+}
+
+function renderJobs(jobs, containerId) {
+  const el = document.getElementById(containerId);
+  if (!jobs || jobs.length === 0) {
+    el.innerHTML = `<div class="col-span-2 text-center py-12 text-muted text-sm">
+      No listings found for this query. Try a broader search term.
+    </div>`;
+    return;
+  }
+  el.innerHTML = jobs.map(j => `
+    <a href="${j.url || '#'}" target="_blank" rel="noopener" class="card job-card block no-underline">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-text truncate">${escHtml(j.position || j.title || "Position")}</h3>
+          <p class="text-xs text-muted mt-0.5">${escHtml(j.company || "")}${j.location ? ` · ${escHtml(j.location)}` : ''}</p>
+        </div>
+        <span class="pill-source flex-shrink-0">${escHtml(j.source || 'Job Board')}</span>
+      </div>
+      ${j.salary ? `<p class="text-xs text-lime-400 font-mono mb-2">💰 ${escHtml(j.salary)}</p>` : ''}
+      ${j.summary ? `<p class="text-xs text-muted/80 line-clamp-2">${escHtml(j.summary.substring(0,180))}…</p>` : ''}
+      ${j.tags && j.tags.length ? `<div class="flex flex-wrap gap-1 mt-3">${j.tags.slice(0,5).map(t => `<span class="chip">${escHtml(t)}</span>`).join('')}</div>` : ''}
+      ${j.open_date ? `<p class="text-[10px] font-mono text-muted/50 mt-2">Posted: ${escHtml(j.open_date)}</p>` : ''}
+    </a>
+  `).join('');
+}
+
+function renderInternships(internships) {
+  const el = document.getElementById("internships-grid");
+  if (!internships || internships.length === 0) {
+    el.innerHTML = `<div class="col-span-2 text-center py-12 text-muted text-sm">
+      No internships scraped for this query. Try "software engineer internship" or a specific role.
+    </div>`;
+    return;
+  }
+  el.innerHTML = internships.map(i => `
+    <a href="${i.url || '#'}" target="_blank" rel="noopener" class="card job-card block no-underline">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-text">${escHtml(i.title || i.position || "Internship")}</h3>
+          <p class="text-xs text-muted mt-0.5">${escHtml(i.company || "")}${i.location ? ` · ${escHtml(i.location)}` : ''}</p>
+        </div>
+        <span class="pill-source pill-live flex-shrink-0">🎓 Intern</span>
+      </div>
+      ${i.stipend ? `<p class="text-xs text-amber-400 font-mono mb-2">💵 ${escHtml(i.stipend)}</p>` : ''}
+      ${i.duration ? `<p class="text-xs text-muted font-mono">⏱ ${escHtml(i.duration)}</p>` : ''}
+      ${i.summary ? `<p class="text-xs text-muted/80 mt-2 line-clamp-2">${escHtml(i.summary.substring(0,160))}…</p>` : ''}
+      <p class="text-[10px] font-mono text-muted/50 mt-2">Source: ${escHtml(i.source || 'Job Board')}</p>
+    </a>
+  `).join('');
+}
+
+function renderSalary(salaryData, allSalaryData) {
+  const el = document.getElementById("salary-container");
+  const data = salaryData && salaryData.length ? salaryData : allSalaryData;
+  if (!data || data.length === 0) {
+    el.innerHTML = `<p class="text-muted text-sm">No salary data available for this query.</p>`;
+    return;
+  }
+  const maxSal = Math.max(...data.map(s => s.max || 0));
+  el.innerHTML = `
+    <div class="card mb-4">
+      <h3 class="text-sm font-semibold text-text mb-1">Salary Bands</h3>
+      <p class="text-xs text-muted">Based on industry data for ${escHtml(currentQuery)}</p>
+    </div>
+    ${data.map(s => {
+      const pct = maxSal > 0 ? Math.round((s.median / maxSal) * 100) : 50;
+      const curr = s.currency === "INR" ? "₹" : "$";
+      const fmt = (n) => s.currency === "INR" ? `${curr}${(n/100000).toFixed(1)}L` : `${curr}${Math.round(n/1000)}k`;
+      return `
+        <div class="card">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="text-sm font-semibold text-text">${escHtml(s.role)}</span>
+              <span class="badge-count ml-2">${escHtml(s.level)}</span>
+            </div>
+            <span class="text-xs font-mono text-muted">${escHtml(s.country || 'USA')}</span>
+          </div>
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs font-mono text-muted/70">${fmt(s.min)}</span>
+            <div class="flex-1 bg-white/5 rounded-full h-2">
+              <div class="salary-bar" style="width:${pct}%"></div>
+            </div>
+            <span class="text-xs font-mono text-muted/70">${fmt(s.max)}</span>
+          </div>
+          <p class="text-xs font-mono text-lime-400">Median: <strong>${fmt(s.median)}</strong>/year</p>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function renderTrends(trends) {
+  const el = document.getElementById("trends-container");
+  if (!trends || trends.length === 0) {
+    el.innerHTML = `<p class="text-muted text-sm">No trend data available yet.</p>`;
+    return;
+  }
+  const maxScore = Math.max(...trends.map(t => t.trend_score || 0), 1);
+  el.innerHTML = trends.map((t, i) => `
+    <div class="card flex items-center gap-4">
+      <span class="text-lg font-mono text-muted/50 w-7 text-right">#${i+1}</span>
+      <div class="flex-1">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-text">${escHtml(t.skill || '')}</span>
+          <div class="flex items-center gap-2">
+            ${t.emerging_opportunity ? '<span class="pill-source pill-live">🚀 Emerging</span>' : ''}
+            <span class="badge-count">${Math.round(t.trend_score || 0)}%</span>
+          </div>
+        </div>
+        <div class="bg-white/5 rounded-full h-1.5">
+          <div class="trend-bar" style="width:${Math.round((t.trend_score/maxScore)*100)}%"></div>
+        </div>
+        <p class="text-[10px] font-mono text-muted/50 mt-1">Demand velocity: ${Math.round(t.demand_velocity || 0)}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderScholarships(scholarships) {
+  const el = document.getElementById("scholarships-grid");
+  if (!scholarships || scholarships.length === 0) {
+    el.innerHTML = `<p class="col-span-2 text-muted text-sm py-8 text-center">No scholarship data available.</p>`;
+    return;
+  }
+  el.innerHTML = scholarships.map(s => `
+    <a href="${escHtml(s.url || '#')}" target="_blank" rel="noopener" class="card job-card block no-underline">
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <h3 class="text-sm font-semibold text-text flex-1">${escHtml(s.name)}</h3>
+        <span class="pill-source flex-shrink-0">${escHtml(s.country || 'Global')}</span>
+      </div>
+      <p class="text-xs text-amber-400 font-mono mb-2">💰 ${escHtml(s.amount || 'Varies')}</p>
+      <p class="text-xs text-muted mb-2">📅 ${escHtml(s.deadline || 'Check website')}</p>
+      <p class="text-xs text-muted/70">${escHtml(s.eligibility || '')}</p>
+      <div class="mt-3 bg-white/5 rounded-full h-1">
+        <div class="trend-bar" style="width:${Math.round((s.relevance_score || 0.5)*100)}%"></div>
+      </div>
+      <p class="text-[10px] font-mono text-muted/50 mt-1">Relevance: ${Math.round((s.relevance_score||0.5)*100)}%</p>
+    </a>
+  `).join('');
+}
+
+function renderUniversities(unis) {
+  const el = document.getElementById("universities-grid");
+  if (!unis || unis.length === 0) {
+    el.innerHTML = `<p class="text-muted text-sm">No university data available.</p>`;
+    return;
+  }
+  el.innerHTML = unis.map(u => `
+    <a href="${escHtml(u.url || '#')}" target="_blank" rel="noopener" class="card job-card block no-underline">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <h3 class="text-sm font-semibold text-text flex-1">${escHtml(u.name)}</h3>
+        <span class="badge-count">#${escHtml(String(u.ranking || '?'))}</span>
+      </div>
+      <p class="text-xs text-accent mb-1">${escHtml(u.country || '')}</p>
+      <p class="text-xs text-muted font-mono">${escHtml(u.program || '')}</p>
+      ${u.description ? `<p class="text-xs text-muted/70 mt-2">${escHtml(u.description)}</p>` : ''}
+    </a>
+  `).join('');
+}
+
+function renderResearch(papers) {
+  const el = document.getElementById("research-list");
+  if (!papers || papers.length === 0) {
+    el.innerHTML = `<p class="text-muted text-sm">No research papers found for this query.</p>`;
+    return;
+  }
+  el.innerHTML = papers.map(p => `
+    <a href="${escHtml(p.link || '#')}" target="_blank" rel="noopener" class="card job-card block no-underline">
+      <div class="flex items-start gap-3">
+        <span class="text-lg mt-0.5">📄</span>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-text leading-snug mb-1">${escHtml(p.title || '')}</h3>
+          <p class="text-xs text-muted/80 line-clamp-3">${escHtml((p.summary || '').substring(0,250))}…</p>
+          ${p.tags && p.tags.length ? `<div class="flex flex-wrap gap-1 mt-2">${p.tags.slice(0,4).map(t=>`<span class="chip">${escHtml(t)}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+    </a>
+  `).join('');
+}
+
+function renderCompanies(companies) {
+  const el = document.getElementById("companies-grid");
+  if (!companies || companies.length === 0) {
+    el.innerHTML = `<p class="text-muted text-sm">No company data available yet. More jobs in results = more companies detected.</p>`;
+    return;
+  }
+  el.innerHTML = companies.map(c => `
+    <div class="card">
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="text-sm font-semibold text-text">${escHtml(c.name)}</h3>
+        <span class="badge-count">${c.internship_count} listings</span>
+      </div>
+      <p class="text-xs text-muted">${escHtml(c.location || 'Global / Remote')}</p>
+      <div class="mt-3 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-muted/60">Popularity</span>
+          <span class="text-[10px] font-mono text-muted/60">${c.popularity_score}%</span>
+        </div>
+        <div class="bg-white/5 rounded-full h-1.5">
+          <div class="trend-bar" style="width:${c.popularity_score}%"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function doSearch() {
+  const q = document.getElementById("search-input").value.trim();
+  if (!q) return;
+  currentQuery = q;
+
+  setLoading(true);
+
+  const msgs = [
+    "Scraping GitHub Trending…",
+    "Querying HN Who's Hiring…",
+    "Fetching RemoteOK jobs…",
+    "Checking arXiv research papers…",
+    "Scraping internship listings…",
+    "Aggregating salary data…",
+    "Analysing skill trends…",
+  ];
+  let msgIdx = 0;
+  const msgEl = document.getElementById("loading-msg");
+  const msgInterval = setInterval(() => {
+    msgEl.textContent = msgs[msgIdx++ % msgs.length];
+  }, 1200);
+
+  try {
+    const resp = await fetch(`/api/live-search?q=${encodeURIComponent(q)}&country=USA`);
+    clearInterval(msgInterval);
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showError(err.detail || `Search failed (${resp.status}). Please try again.`);
+      return;
+    }
+
+    const data = await resp.json();
+    renderResults(data);
+  } catch (err) {
+    clearInterval(msgInterval);
+    showError("Network error. Please check your connection and try again.");
+    console.error(err);
+  }
+}
+
+function renderResults(data) {
+  // Stats
+  document.getElementById("stat-jobs").textContent = data.total_jobs || data.jobs?.length || 0;
+  document.getElementById("stat-internships").textContent = data.total_internships || data.internships?.length || 0;
+  document.getElementById("stat-scholarships").textContent = data.scholarships?.length || 0;
+  document.getElementById("stat-sources").textContent = data.sources_active?.length || 0;
+
+  // Header
+  document.getElementById("results-title").textContent = `Results for "${data.query}"`;
+  const ts = new Date(data.timestamp * 1000).toLocaleTimeString();
+  document.getElementById("results-sub").textContent = `Scraped live at ${ts} · ${data.sources_active?.length || 0} sources active`;
+
+  // Source badges
+  const badgesEl = document.getElementById("source-badges");
+  badgesEl.innerHTML = (data.sources_active || []).map(s =>
+    `<span class="pill-source pill-live"><span class="source-dot dot-green inline-block w-1.5 h-1.5 rounded-full mr-1"></span>${s}</span>`
+  ).join('');
+
+  // Render all tabs
+  renderJobs(data.jobs || [], "jobs-grid");
+  renderInternships(data.internships || []);
+  renderSalary(data.salary_data || [], data.all_salary_data || []);
+  renderTrends(data.skill_trends || []);
+  renderScholarships(data.scholarships || []);
+  renderUniversities(data.universities || []);
+  renderResearch(data.research_papers || []);
+  renderCompanies(data.top_companies || []);
+
+  // Show results
+  document.getElementById("loading-state").classList.add("hidden");
+  document.getElementById("results-container").classList.remove("hidden");
+  document.getElementById("error-state").classList.add("hidden");
+  document.getElementById("search-btn").disabled = false;
+  document.getElementById("btn-label").textContent = "Search →";
+
+  // Scroll to results
+  document.getElementById("results-container").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+{% endblock %}

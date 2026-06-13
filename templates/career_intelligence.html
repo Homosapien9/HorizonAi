@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Career Intelligence - Horizon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 0; transform: translateY(0); }
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: loadingDots 1.5s infinite;
+        }
+
+        @keyframes loadingDots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .confidence-bar {
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .skill-tag {
+            background: linear-gradient(90deg, #e0e7ff, #f3e8ff);
+            border: 1px solid #c7d2fe;
+            transition: all 0.2s ease;
+        }
+
+        .skill-tag:hover {
+            background: linear-gradient(90deg, #c7d2fe, #ddd6fe);
+            transform: scale(1.05);
+        }
+
+        .region-badge {
+            background: linear-gradient(90deg, #fef3c7, #fed7aa);
+            border: 1px solid #fde68a;
+        }
+
+        .source-badge {
+            background: linear-gradient(90deg, #dcfce7, #bbf7d0);
+            border: 1px solid #86efac;
+        }
+
+        .error-badge {
+            background: linear-gradient(90deg, #fee2e2, #fecaca);
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="min-h-screen p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl font-bold text-white mb-4">🌍 Global Career Intelligence</h1>
+                <p class="text-xl text-white/80 mb-2">Advanced real-time career data pipeline</p>
+                <p class="text-white/60">Extract, aggregate, validate, and structure career data globally</p>
+            </div>
+
+            <!-- Search Form -->
+            <div class="glass-effect rounded-2xl p-8 mb-8 animate-fade-in">
+                <form id="career-form" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-white font-semibold mb-2">Career Field or Role</label>
+                            <input type="text" id="field-input" name="q" required
+                                placeholder="e.g., software engineer, data scientist, machine learning engineer, or any vague/interesting field..."
+                                class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors">
+                            <p class="text-white/60 text-sm mt-1">Try anything - even vague, empty, or random inputs</p>
+                        </div>
+                        <div>
+                            <label class="block text-white font-semibold mb-2">Country/Region (Optional)</label>
+                            <input type="text" id="country-input" name="country"
+                                placeholder="e.g., USA, India, Germany, Global..."
+                                class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-white font-semibold mb-2">Experience Level (Optional)</label>
+                            <select id="experience-input" name="experience_level"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors">
+                                <option value="">Any Level</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="remote-input" name="remote_only"
+                                    class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-white font-medium">Remote Opportunities Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit"
+                            class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105">
+                            🚀 Generate Global Career Intelligence
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden glass-effect rounded-2xl p-12 text-center animate-fade-in">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-white mb-4"></div>
+                <h3 class="text-2xl font-semibold text-white mb-2">🔄 Processing Global Career Data...</h3>
+                <p class="text-white/70">Extracting, aggregating, and validating data from global sources...</p>
+                <div class="mt-4 text-white/60 text-sm loading-dots">Analyzing your career field</div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="results-container" class="hidden space-y-8">
+                <!-- Confidence Score and Summary -->
+                <div class="glass-effect rounded-2xl p-6 animate-fade-in">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-green-300 mb-1" id="confidence-score">0%</div>
+                            <div class="text-white/70 text-sm">Confidence Score</div>
+                            <div class="confidence-bar mt-2 rounded-full"></div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-blue-300 mb-1" id="regions-covered">0</div>
+                            <div class="text-white/70 text-sm">Regions Covered</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-purple-300 mb-1" id="sources-count">0</div>
+                            <div class="text-white/70 text-sm">Active Sources</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-white/10 rounded-lg">
+                        <h4 class="text-white font-semibold mb-2">📊 Global Summary</h4>
+                        <p class="text-white/80" id="global-summary">Processing...</p>
+                    </div>
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <!-- Left Column - Core Data -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Job Roles -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">💼 Job Roles Found</h3>
+                            <div class="grid md:grid-cols-2 gap-3" id="job-roles">
+                                <!-- Job roles will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Skills -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">🛠️ Skills & Technologies</h3>
+
+                            <div class="mb-4">
+                                <h4 class="text-white font-medium mb-2">Technical Skills</h4>
+                                <div class="flex flex-wrap gap-2" id="technical-skills">
+                                    <!-- Technical skills will be populated here -->
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-white font-medium mb-2">Soft Skills</h4>
+                                <div class="flex flex-wrap gap-2" id="soft-skills">
+                                    <!-- Soft skills will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tools and Technologies -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">⚙️ Tools & Technologies</h3>
+                            <div class="flex flex-wrap gap-2" id="tools-technologies">
+                                <!-- Tools will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Salary Information -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">💰 Salary Information</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="bg-white/10 p-4 rounded-lg">
+                                    <div class="text-white/70 text-sm">Global Average</div>
+                                    <div class="text-2xl font-bold text-green-300" id="global-salary">$0</div>
+                                </div>
+                                <div class="bg-white/10 p-4 rounded-lg">
+                                    <div class="text-white/70 text-sm">Salary Range</div>
+                                    <div class="text-2xl font-bold text-blue-300" id="salary-range">N/A</div>
+                                </div>
+                            </div>
+                            <div class="mt-4" id="regional-salary-breakdown">
+                                <!-- Regional breakdown will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Insights and Resources -->
+                    <div class="space-y-6">
+                        <!-- Demand by Region -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">🌍 Demand by Region</h3>
+                            <div id="demand-by-region">
+                                <!-- Demand data will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Career Path -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">📈 Career Path</h3>
+                            <div id="career-path">
+                                <!-- Career path will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Remote Opportunities -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">🏠 Remote Opportunities</h3>
+                            <div id="remote-opportunities">
+                                <!-- Remote opportunities will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Free Resources -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">📚 Free Resources</h3>
+                            <div id="free-resources">
+                                <!-- Free resources will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Data Quality Info -->
+                        <div class="glass-effect rounded-2xl p-6 animate-fade-in card-hover">
+                            <h3 class="text-xl font-semibold text-white mb-4">📋 Data Quality</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-white/70">Sources Used</span>
+                                    <span class="text-white font-semibold" id="sources-used-count">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-white/70">Data Gaps</span>
+                                    <span class="text-orange-300 font-semibold" id="data-gaps-count">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-white/70">Errors</span>
+                                    <span class="text-red-300 font-semibold" id="errors-count">0</span>
+                                </div>
+                            </div>
+
+                            <div id="data-gaps-list" class="mt-4 hidden">
+                                <h4 class="text-white font-medium mb-2">⚠️ Data Gaps</h4>
+                                <ul class="text-white/70 text-sm space-y-1" id="data-gaps-content">
+                                    <!-- Data gaps will be populated here -->
+                                </ul>
+                            </div>
+
+                            <div id="errors-list" class="mt-4 hidden">
+                                <h4 class="text-white font-medium mb-2">❌ Errors</h4>
+                                <ul class="text-red-200 text-sm space-y-1" id="errors-content">
+                                    <!-- Errors will be populated here -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form submission handler
+        document.getElementById('career-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const query = formData.get('q');
+            const country = formData.get('country') || '';
+            const experienceLevel = formData.get('experience_level') || '';
+            const remoteOnly = formData.get('remote_only') === 'on';
+
+            // Show loading state
+            document.getElementById('career-form').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('results-container').classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/career-intelligence?q=${encodeURIComponent(query)}&country=${encodeURIComponent(country)}&experience_level=${encodeURIComponent(experienceLevel)}&remote_only=${remoteOnly}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading state
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('results-container').classList.remove('hidden');
+
+                // Populate results
+                populateResults(data);
+
+            } catch (error) {
+                console.error('Error fetching career intelligence:', error);
+                document.getElementById('loading-state').innerHTML = `
+                    <div class="text-center">
+                        <h3 class="text-2xl font-semibold text-white mb-2">❌ Error occurred</h3>
+                        <p class="text-white/70">Failed to load career intelligence data.</p>
+                        <p class="text-red-300 text-sm mt-2">${error.message}</p>
+                        <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        // Populate results function
+        function populateResults(data) {
+            // Update confidence score
+            document.getElementById('confidence-score').textContent = data.confidence_score;
+            document.querySelector('.confidence-bar').style.width = data.confidence_score;
+
+            // Update regions covered
+            document.getElementById('regions-covered').textContent = data.regions_covered.length;
+
+            // Update sources count
+            document.getElementById('sources-count').textContent = data.sources_used.length;
+
+            // Update global summary
+            document.getElementById('global-summary').textContent = `Career field: "${data.field_name}". Interpreted input: "${data.interpreted_input}". Confidence: ${data.confidence_score}.`;
+
+            // Populate job roles
+            const jobRolesHtml = data.job_roles.map(role => `
+                <div class="skill-tag px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
+                    ${role}
+                </div>
+            `).join('');
+            document.getElementById('job-roles').innerHTML = jobRolesHtml;
+
+            // Populate technical skills
+            const technicalSkillsHtml = data.skills.technical.map(skill => `
+                <div class="skill-tag px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
+                    ${skill}
+                </div>
+            `).join('');
+            document.getElementById('technical-skills').innerHTML = technicalSkillsHtml;
+
+            // Populate soft skills
+            const softSkillsHtml = data.skills.soft.map(skill => `
+                <div class="skill-tag px-3 py-2 rounded-lg text-sm font-medium text-gray-700">
+                    ${skill}
+                </div>
+            `).join('');
+            document.getElementById('soft-skills').innerHTML = softSkillsHtml;
+
+            // Populate tools and technologies
+            const toolsHtml = data.tools_and_technologies.map(tool => `
+                <span class="px-2 py-1 bg-gray-200 rounded text-sm text-gray-600">
+                    ${tool}
+                </span>
+            `).join('');
+            document.getElementById('tools-technologies').innerHTML = toolsHtml;
+
+            // Update salary information
+            document.getElementById('global-salary').textContent = `$${data.salary.global_average_usd}`;
+            document.getElementById('salary-range').textContent = `$${data.salary.regional_breakdown[Object.keys(data.salary.regional_breakdown)[0]]?.avg_min || 'N/A'} - $${data.salary.regional_breakdown[Object.keys(data.salary.regional_breakdown)[0]]?.avg_max || 'N/A'}`;
+
+            // Populate regional salary breakdown
+            let regionalHtml = '';
+            for (const [country, salaryData] of Object.entries(data.salary.regional_breakdown)) {
+                regionalHtml += `
+                    <div class="flex justify-between items-center py-2 border-b border-white/10">
+                        <span class="text-white/70 text-sm">${country}</span>
+                        <span class="text-white font-medium">$${salaryData.avg_min} - $${salaryData.avg_max}</span>
+                    </div>
+                `;
+            }
+            document.getElementById('regional-salary-breakdown').innerHTML = regionalHtml;
+
+            // Populate demand by region
+            let demandHtml = '';
+            for (const [region, count] of Object.entries(data.demand_by_region)) {
+                demandHtml += `
+                    <div class="flex justify-between items-center py-2">
+                        <span class="region-badge px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+                            ${region}
+                        </span>
+                        <span class="text-white font-semibold">${count} opportunities</span>
+                    </div>
+                `;
+            }
+            document.getElementById('demand-by-region').innerHTML = demandHtml;
+
+            // Populate career path
+            let careerPathHtml = '';
+            data.career_path.forEach((stage, index) => {
+                careerPathHtml += `
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-white font-semibold">${stage.level} - ${stage.average_salary_range.min.toLocaleString()} - ${stage.average_salary_range.max.toLocaleString()}</div>
+                            <div class="text-white/60 text-sm">Roles: ${stage.typical_roles.join(', ')}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('career-path').innerHTML = careerPathHtml;
+
+            // Populate remote opportunities
+            let remoteHtml = '';
+            data.remote_opportunities.forEach(insight => {
+                remoteHtml += `
+                    <div class="bg-white/10 p-4 rounded-lg">
+                        <div class="text-white font-medium mb-2">${insight.insight}</div>
+                        <div class="text-white/60 text-sm">Regions: ${insight.regions_with_remote.join(', ')}</div>
+                        <div class="text-green-300 text-sm">Remote Percentage: ${insight.remote_percentage.toFixed(1)}%</div>
+                    </div>
+                `;
+            });
+            document.getElementById('remote-opportunities').innerHTML = remoteHtml;
+
+            // Populate free resources
+            let resourcesHtml = '';
+            data.free_resources.forEach(resource => {
+                resourcesHtml += `
+                    <div class="bg-white/10 p-4 rounded-lg hover:bg-white/20 transition-colors">
+                        <h4 class="text-white font-medium mb-1"><a href="${resource.url}" target="_blank" class="hover:text-blue-300">${resource.title}</a></h4>
+                        <p class="text-white/60 text-sm">Provider: ${resource.provider}</p>
+                        <p class="text-white/60 text-sm">Type: ${resource.type}</p>
+                        <span class="source-badge px-2 py-1 rounded-full text-xs font-medium text-green-700 mt-2 inline-block">
+                            ${resource.free ? 'Free' : 'Paid'}
+                        </span>
+                    </div>
+                `;
+            });
+            document.getElementById('free-resources').innerHTML = resourcesHtml;
+
+            // Update data gaps and errors
+            if (data.data_gaps && data.data_gaps.length > 0) {
+                document.getElementById('data-gaps-count').textContent = data.data_gaps.length;
+                document.getElementById('data-gaps-content').innerHTML = data.data_gaps.map(gap => `<li>${gap}</li>`).join('');
+                document.getElementById('data-gaps-list').classList.remove('hidden');
+            }
+
+            if (data.errors && data.errors.length > 0) {
+                document.getElementById('errors-count').textContent = data.errors.length;
+                document.getElementById('errors-content').innerHTML = data.errors.map(error => `<li>${error}</li>`).join('');
+                document.getElementById('errors-list').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

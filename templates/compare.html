@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Horizon — Roadmap Comparison{% endblock %}
+
+{% block content %}
+<section class="relative min-h-[85vh] flex flex-col items-center justify-center px-6 overflow-hidden py-20">
+  <div class="absolute inset-0 dot-grid opacity-30 pointer-events-none"></div>
+  <div class="relative z-10 max-w-4xl w-full mx-auto">
+
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <div class="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border bg-card/60 backdrop-blur px-3 py-1.5 rounded-full mb-8">
+        <svg class="w-3 h-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Career path comparison
+      </div>
+      <h1 class="font-head text-4xl sm:text-5xl font-extrabold text-text mb-4 tracking-tight">
+        Compare <span class="text-accent">two career paths</span>
+      </h1>
+      <p class="text-muted text-base max-w-xl mx-auto font-light">
+        Get a three-column breakdown — skills unique to each path and shared skills — so you know exactly what switching tracks costs.
+      </p>
+    </div>
+
+    <!-- Input card -->
+    <div class="bg-card border border-border rounded-2xl p-8 shadow-2xl shadow-black/30 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div>
+          <label class="form-label text-accent">Goal A</label>
+          <input id="goal-a" type="text" placeholder="e.g. ML Engineer"
+            class="form-input border-accent/40 focus:border-accent"/>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            {% for g in ["ML Engineer","Data Scientist","AI Researcher","SWE Intern","ML Intern","Product Manager","Blockchain Developer","Game Developer","Mobile Developer","Cloud Architect"] %}
+            <button type="button" onclick="document.getElementById('goal-a').value='{{ g }}'"
+              class="text-[10px] font-mono border border-border text-muted px-2 py-0.5 rounded-full hover:border-accent/60 hover:text-accent transition-colors">
+              {{ g }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="form-label text-rose">Goal B</label>
+          <input id="goal-b" type="text" placeholder="e.g. Data Scientist"
+            class="form-input border-rose/40 focus:border-rose"/>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            {% for g in ["DevOps Engineer","Cybersecurity Analyst","Backend Engineer","UX Designer","Data Engineer","Quantum Computing Engineer","Game Developer","Cloud Architect"] %}
+            <button type="button" onclick="document.getElementById('goal-b').value='{{ g }}'"
+              class="text-[10px] font-mono border border-border text-muted px-2 py-0.5 rounded-full hover:border-rose/60 hover:text-rose transition-colors">
+              {{ g }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="form-label">Current level</label>
+          <select id="cmp-level" class="form-input appearance-none select-arrow">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label flex justify-between">
+            <span>Weekly hours</span>
+            <span id="cmp-hrs-val" class="font-mono text-accent">10h</span>
+          </label>
+          <input id="cmp-hours" type="range" min="1" max="80" value="10"
+            oninput="document.getElementById('cmp-hrs-val').textContent=this.value+'h'"
+            class="range-input w-full mt-2"/>
+        </div>
+      </div>
+
+      <button onclick="runComparison()"
+        class="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-all text-sm shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+        Compare paths
+      </button>
+      <p id="cmp-error" class="hidden text-rose text-xs mt-2 font-mono"></p>
+    </div>
+
+    <!-- Results -->
+    <div id="cmp-results" class="hidden space-y-6"></div>
+  </div>
+</section>
+
+<script>
+async function runComparison() {
+  const goalA = document.getElementById('goal-a').value.trim();
+  const goalB = document.getElementById('goal-b').value.trim();
+  const level = document.getElementById('cmp-level').value;
+  const hours = document.getElementById('cmp-hours').value;
+  const err = document.getElementById('cmp-error');
+  const results = document.getElementById('cmp-results');
+  err.classList.add('hidden');
+
+  if (!goalA || !goalB) {
+    err.textContent = 'Please enter both goals.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  results.innerHTML = '<div class="text-xs font-mono text-muted animate-pulse text-center py-8">⏳ Comparing paths…</div>';
+  results.classList.remove('hidden');
+
+  const fd = new FormData();
+  fd.append('goal_a', goalA);
+  fd.append('goal_b', goalB);
+  fd.append('skill_level', level);
+  fd.append('weekly_hours', hours);
+
+  try {
+    const resp = await fetch('/api/compare', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Comparison failed');
+    renderComparison(data);
+  } catch(ex) {
+    results.innerHTML = `<p class="text-rose text-xs font-mono text-center">✗ ${ex.message}</p>`;
+  }
+}
+
+function renderComparison(data) {
+  const results = document.getElementById('cmp-results');
+
+  // Summary stats
+  const summaryHtml = `
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-card border border-accent/30 rounded-xl p-5 text-center">
+        <div class="font-head text-2xl font-bold text-accent mb-1">${data.weeks_a}w</div>
+        <div class="text-xs font-mono text-muted">${data.track_a}</div>
+        <div class="text-[10px] text-muted/60 mt-1">${data.skills_only_a.length + data.skills_shared.length} total skills</div>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-5 text-center">
+        <div class="font-head text-2xl font-bold text-text mb-1">${data.skills_shared.length}</div>
+        <div class="text-xs font-mono text-muted">shared skills</div>
+        <div class="text-[10px] text-muted/60 mt-1">overlap between paths</div>
+      </div>
+      <div class="bg-card border border-rose/30 rounded-xl p-5 text-center">
+        <div class="font-head text-2xl font-bold text-rose mb-1">${data.weeks_b}w</div>
+        <div class="text-xs font-mono text-muted">${data.track_b}</div>
+        <div class="text-[10px] text-muted/60 mt-1">${data.skills_only_b.length + data.skills_shared.length} total skills</div>
+      </div>
+    </div>`;
+
+  // Switch cost banner
+  const switchHtml = `
+    <div class="bg-amber/10 border border-amber/30 rounded-xl p-4 flex items-center gap-4">
+      <span class="text-amber text-2xl">⇄</span>
+      <div>
+        <p class="text-sm font-semibold text-text">Switching cost: <span class="text-amber">${data.switch_cost_weeks} weeks</span></p>
+        <p class="text-xs text-muted">If you're on track ${data.track_a}, this is what it takes to pivot to ${data.track_b}.</p>
+      </div>
+    </div>`;
+
+  // Three-column skill diff
+  function skillList(skills, colorClass, label) {
+    if (!skills.length) return `<p class="text-xs text-muted/50 italic">None unique to this path</p>`;
+    return skills.map(s =>
+      `<div class="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
+        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${colorClass}"></span>
+        <span class="text-xs font-mono text-text">${s}</span>
+      </div>`
+    ).join('');
+  }
+
+  const colsHtml = `
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-card border border-accent/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2 h-2 rounded-full bg-accent"></span>
+          <span class="text-xs font-mono font-semibold text-accent">Only in ${data.track_a}</span>
+          <span class="ml-auto text-[10px] font-mono text-muted">${data.skills_only_a.length} skills</span>
+        </div>
+        ${skillList(data.skills_only_a, 'bg-accent', data.track_a)}
+      </div>
+      <div class="bg-card border border-border rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2 h-2 rounded-full bg-lime"></span>
+          <span class="text-xs font-mono font-semibold text-lime">Shared skills</span>
+          <span class="ml-auto text-[10px] font-mono text-muted">${data.skills_shared.length} skills</span>
+        </div>
+        ${skillList(data.skills_shared, 'bg-lime', 'shared')}
+      </div>
+      <div class="bg-card border border-rose/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2 h-2 rounded-full bg-rose"></span>
+          <span class="text-xs font-mono font-semibold text-rose">Only in ${data.track_b}</span>
+          <span class="ml-auto text-[10px] font-mono text-muted">${data.skills_only_b.length} skills</span>
+        </div>
+        ${skillList(data.skills_only_b, 'bg-rose', data.track_b)}
+      </div>
+    </div>`;
+
+  results.innerHTML = summaryHtml + switchHtml + colsHtml;
+}
+</script>
+{% endblock %}
