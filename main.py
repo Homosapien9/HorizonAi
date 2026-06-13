@@ -3,7 +3,7 @@ Horizon v5 — FastAPI application.
 Roadmaps, comparison, live search, internships, and JD scanning.
 """
 from __future__ import annotations
-
+import os
 import asyncio
 import json
 import logging
@@ -570,4 +570,6 @@ async def career_intelligence_page(request: Request):
     return templates.TemplateResponse(request=request, name="career_intelligence.html")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
