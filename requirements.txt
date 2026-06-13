@@ -16,9 +16,6 @@ zstandard>=0.25,<1
 slowapi>=0.1.9,<1
 pdfminer.six
 markupsafe>=3,<4
-
-# Optional heavier NLP dependencies.
-# The app now works without them and falls back to lightweight generalized extraction.
-# Uncomment only if you explicitly want transformer / KeyBERT enrichment.
-# keybert>=0.8.5,<1
-# sentence-transformers>=5,<6
+os
+keybert>=0.8.5,<1
+sentence-transformers>=5,<6
