@@ -406,6 +406,17 @@
       </div>
 
       <!-- Universities -->
+
+      <div class="bg-gradient-to-br from-accent/5 to-lime/5 border border-accent/20 rounded-xl p-6 mb-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center text-xl">🎓</div>
+          <div>
+            <h2 class="section-label text-accent">Top Universities</h2>
+            <p class="text-xs text-muted mt-0.5">Ranked by academic excellence and technical programs</p>
+          </div>
+          <div class="ml-auto text-xs font-mono text-accent/60">Ranked by industry demand</div>
+        </div>
+
       {% if result.universities %}
       <div class="bg-card border border-border rounded-xl p-5">
         <h2 class="section-label mb-4">Universities</h2>
@@ -425,8 +436,20 @@
         </div>
       </div>
       {% endif %}
+      </div>
 
       <!-- Scholarships -->
+
+      <div class="bg-gradient-to-br from-amber/5 to-rose/5 border border-amber/20 rounded-xl p-6 mb-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-amber/20 border border-amber/30 flex items-center justify-center text-xl">💰</div>
+          <div>
+            <h2 class="section-label text-amber">Tech Scholarships & Grants</h2>
+            <p class="text-xs text-muted mt-0.5">Funding opportunities for technical education</p>
+          </div>
+          <div class="ml-auto text-xs font-mono text-amber/60">Latest funding updates</div>
+        </div>
+
       {% if result.scholarships %}
       <div class="bg-card border border-border rounded-xl p-5">
         <h2 class="section-label mb-4">Scholarships</h2>
@@ -445,6 +468,7 @@
         </div>
       </div>
       {% endif %}
+      </div>
 
     </div><!-- /sidebar -->
   </div><!-- /grid -->
@@ -509,7 +533,7 @@
 {% if result.dag_edges %}
 <script>
 (function() {
-  const edges = {{ result.dag_edges | tojson }};
+  const edges = {{ dag_edges_json | tojson }};
   const allTopSkills = new Set({{ result.top_skills | map(attribute='key') | list | tojson }});
   const skillNames = {};
   {% for sk in result.top_skills %}

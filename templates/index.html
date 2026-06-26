@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Horizon — STEM Career Intelligence{% endblock %}
+{% block title %}Horizon — Technical & IT Field Career Intelligence{% endblock %}
 
 {% block content %}
 
@@ -15,13 +15,13 @@
     </div>
 
     <h1 class="font-head text-5xl sm:text-[64px] leading-[1.05] font-extrabold text-text mb-5 tracking-tight">
-      Your career,<br/>
+      Your Technical & IT career,<br/>
       <span class="text-accent">evidence-backed.</span>
     </h1>
 
     <p class="text-base sm:text-lg text-muted max-w-xl mx-auto mb-12 leading-relaxed font-light">
-      Horizon analyses GitHub Trending, Hacker News hiring, arXiv papers and job boards
-      in real time — then builds a personalised roadmap ranked by actual market demand.
+      Horizon analyzes GitHub Trending, Hacker News hiring, arXiv papers and job boards
+      in real time — then builds a personalized technical roadmap ranked by actual market demand for software engineering, data science, DevOps, security, and emerging tech.
     </p>
 
     <!-- Form card -->
@@ -42,31 +42,31 @@
           <!-- Role category tabs -->
           <div class="mt-3 space-y-2">
             <div class="flex gap-1.5 flex-wrap">
-              <button type="button" onclick="setCategory('engineering')"
-                id="cat-engineering"
-                class="cat-btn active text-[10px] font-mono px-2.5 py-1 rounded border border-accent/40 bg-accent/10 text-accent transition-all">
-                ⚙️ Engineering
-              </button>
-              <button type="button" onclick="setCategory('internship')"
-                id="cat-internship"
-                class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-lime/40 hover:text-lime transition-all">
-                🎓 Internships
-              </button>
-              <button type="button" onclick="setCategory('data')"
-                id="cat-data"
-                class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-accent/40 hover:text-accent transition-all">
-                📊 Data & AI
-              </button>
-              <button type="button" onclick="setCategory('product')"
-                id="cat-product"
-                class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-amber/40 hover:text-amber transition-all">
-                🧩 Product & Design
-              </button>
-              <button type="button" onclick="setCategory('emerging')"
-                id="cat-emerging"
-                class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-rose/40 hover:text-rose transition-all">
-                🚀 Emerging Tech
-              </button>
+               <button type="button" onclick="setCategory('engineering')"
+                 id="cat-engineering"
+                 class="cat-btn active text-[10px] font-mono px-2.5 py-1 rounded border border-accent/40 bg-accent/10 text-accent transition-all">
+                 💻 Software Engineering
+               </button>
+               <button type="button" onclick="setCategory('data')"
+                 id="cat-data"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-accent/40 hover:text-accent transition-all">
+                 🤖 Data & AI
+               </button>
+               <button type="button" onclick="setCategory('devops')"
+                 id="cat-devops"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-lime/40 hover:text-lime transition-all">
+                 ⚡ DevOps & Cloud
+               </button>
+               <button type="button" onclick="setCategory('security')"
+                 id="cat-security"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-rose/40 hover:text-rose transition-all">
+                 🔒 Cybersecurity
+               </button>
+               <button type="button" onclick="setCategory('emerging')"
+                 id="cat-emerging"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-amber/40 hover:text-amber transition-all">
+                 🚀 Emerging Tech
+               </button>
             </div>
 
             <!-- Dynamic quick-pick chips -->
@@ -299,14 +299,16 @@
 <script>
 // ── Category quick-chip data ─────────────────────────────────────────────────
 const CATEGORIES = {
-  engineering: ["ML Engineer","Backend Engineer","Frontend Developer","DevOps Engineer","Data Engineer","Cloud Architect","Mobile Developer","Software Architect"],
-  internship:  ["SWE Intern","ML Intern","Data Analyst Intern","DevOps Intern","Security Intern","Product Intern","Research Intern"],
+  engineering: ["ML Engineer","Backend Engineer","Frontend Developer","DevOps Engineer","Data Engineer","Cloud Architect","Software Architect","System Architect"],
   data:        ["Data Scientist","ML Engineer","AI Researcher","Data Engineer","Analytics Engineer","Bioinformatics Researcher"],
-  product:     ["Product Manager","UX Designer","Technical PM","Associate PM","Design Lead"],
-  emerging:    ["Blockchain Developer","Quantum Computing Engineer","Game Developer","Web3 Developer","AR/VR Engineer"],
+  devops:      ["DevOps Engineer","SRE","Site Reliability Engineer","Cloud Engineer","Kubernetes Engineer","Infrastructure Engineer"],
+  security:    ["Cybersecurity Engineer","Security Engineer","Security Analyst","Penetration Tester","Security Architect"],
+  emerging:    ["Blockchain Developer","Quantum Computing Engineer","Game Developer","Web3 Developer","AR/VR Engineer","Metaverse Engineer"],
 };
 
 let currentCategory = 'engineering';
+
+const colorMap = {engineering:'accent',data:'accent',devops:'lime',security:'rose',emerging:'amber'};
 
 function setCategory(cat) {
   currentCategory = cat;
@@ -320,7 +322,6 @@ function setCategory(cat) {
   const btn = document.getElementById('cat-' + cat);
   if(btn) {
     btn.classList.remove('border-border','text-muted');
-    const colorMap = {engineering:'accent',internship:'lime',data:'accent',product:'amber',emerging:'rose'};
     const c = colorMap[cat] || 'accent';
     btn.classList.add(`border-${c}/40`,`bg-${c}/10`,`text-${c}`);
   }
