@@ -10,19 +10,18 @@ import functools
 import json
 import time
 import uuid
+from pathlib import Path
+
 import models
 from collections import defaultdict, deque
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Optional
 
 from models import (
     DAGEdge,
-    GapAnalysis,
     Internship,
     ComparisonResult,
     RoadmapRequest,
-    RoadmapResult,
-    
     MarketDemand,
     Phase,
     RoadmapResult,
@@ -35,7 +34,14 @@ from models import (
     University,
 )
 
-from career_intelligence_pipeline import DynamicTrackGenerator
+from career_intelligence_pipeline import (
+    Analyzer,
+    DynamicTrackGenerator,
+    _get_embed_model,
+    _get_kw_model,
+    extract_skills_regex,
+    fetch_all_market_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +80,7 @@ SKILL_GRAPH: dict[str, dict] = {
             {"title": "Python Official Tutorial", "url": "https://docs.python.org/3/tutorial/"},
             {"title": "Automate the Boring Stuff (free)", "url": "https://automatetheboringstuff.com/"},
             {"title": "MIT 6.0001 OCW", "url": "https://ocw.mit.edu/courses/6-0001-introduction-to-computer-science-and-programming-in-python-fall-2016/"},
-            {"title": "Python for Everybody (Coursera)", "url": "https://www.coursera.org/specializations/python"},
+            {"title": "Python for Everybody", "url": "https://www.py4e.com/"},
         ],
         "why": "Python dominates ML, data science, automation, and backend development.",
         "tracks": ["ml","ai_research","data_science","backend","cybersecurity","devops","bioinformatics"],
@@ -185,7 +191,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 20, "phase": "foundation", "prerequisites": [],
         "resources": [
             {"title": "Google Technical Writing Course (free)", "url": "https://developers.google.com/tech-writing"},
-            {"title": "Coursera Science Communication", "url": "https://www.coursera.org/learn/technical-writing"},
+            {"title": "Google Technical Writing One", "url": "https://developers.google.com/tech-writing/one"},
         ],
         "why": "Clear technical communication is as valuable as code in every STEM career.",
         "tracks": ["ml","ai_research","data_science","backend","frontend","cybersecurity","devops","bioinformatics"],
@@ -252,7 +258,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 80, "phase": "specialization", "prerequisites": ["scikit_learn","linear_algebra","calculus"],
         "resources": [
             {"title": "fast.ai Practical Deep Learning", "url": "https://course.fast.ai/"},
-            {"title": "Deep Learning Specialization (Coursera)", "url": "https://www.coursera.org/specializations/deep-learning"},
+            {"title": "Dive into Deep Learning", "url": "https://d2l.ai/"},
             {"title": "MIT 6.S191 Deep Learning", "url": "http://introtodeeplearning.mit.edu/"},
         ],
         "why": "Deep learning is the engine of modern AI across vision, NLP, speech, and more.",
@@ -534,14 +540,15 @@ SKILL_GRAPH: dict[str, dict] = {
         "salary_impact": "+$10k",
     },
     "airflow": {
-        "hours": 25, "phase": "specialization", "prerequisites": ["python","sql"],
+        "hours": 30, "phase": "specialization", "prerequisites": ["python","sql","docker"],
         "resources": [
             {"title": "Apache Airflow Docs", "url": "https://airflow.apache.org/docs/apache-airflow/stable/index.html"},
             {"title": "Astronomer Academy (free)", "url": "https://academy.astronomer.io/"},
+            {"title": "Airflow Quick Start", "url": "https://airflow.apache.org/docs/apache-airflow/stable/start.html"},
         ],
-        "why": "Airflow is the most popular workflow orchestration tool in data engineering.",
-        "tracks": ["data_science"],
-        "salary_impact": "+$12k",
+        "why": "Airflow is the standard workflow orchestrator for data pipelines and ETL at scale.",
+        "tracks": ["data_science","data_engineering","ml"],
+        "salary_impact": "+$18k",
     },
     "storytelling": {
         "hours": 20, "phase": "advanced", "prerequisites": ["data_visualization"],
@@ -632,7 +639,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 40, "phase": "specialization", "prerequisites": ["rest_api_design","docker"],
         "resources": [
             {"title": "Microservices.io Patterns", "url": "https://microservices.io/patterns/index.html"},
-            {"title": "Building Microservices (O'Reilly)", "url": "https://samnewman.io/books/building_microservices_2nd_edition/"},
+            {"title": "Microservices.io", "url": "https://microservices.io/"},
         ],
         "why": "Microservices architecture is the standard for scalable backend systems.",
         "tracks": ["backend"],
@@ -685,7 +692,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "resources": [
             {"title": "pytest Documentation", "url": "https://docs.pytest.org/"},
             {"title": "Python Testing with pytest", "url": "https://pragprog.com/titles/bopytest2/python-testing-with-pytest-second-edition/"},
-            {"title": "Test-Driven Development by Example", "url": "https://www.oreilly.com/library/view/test-driven-development/0321146530/"},
+            {"title": "Obey the Testing Goat", "url": "https://www.obeythetestinggoat.com/"},
         ],
         "why": "Automated testing is non-negotiable at production engineering teams.",
         "tracks": ["ml","backend","frontend"],
@@ -892,7 +899,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 40, "phase": "advanced", "prerequisites": ["aws"],
         "resources": [
             {"title": "AWS Well-Architected Framework", "url": "https://aws.amazon.com/architecture/well-architected/"},
-            {"title": "Cloud Architecture Patterns (free)", "url": "https://www.oreilly.com/library/view/cloud-architecture-patterns/9781449357979/"},
+            {"title": "AWS Architecture Center", "url": "https://aws.amazon.com/architecture/"},
         ],
         "why": "Cloud architecture determines cost, scale, and reliability of production systems.",
         "tracks": ["devops","ml","backend"],
@@ -936,7 +943,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "cryptography": {
         "hours": 35, "phase": "core", "prerequisites": ["networking_fundamentals"],
         "resources": [
-            {"title": "Cryptography I (Coursera - Dan Boneh)", "url": "https://www.coursera.org/learn/crypto"},
+            {"title": "Crypto 101", "url": "https://www.crypto101.io/"},
             {"title": "Crypto101 (free book)", "url": "https://www.crypto101.io/"},
             {"title": "CryptoPals Challenges", "url": "https://cryptopals.com/"},
         ],
@@ -947,7 +954,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "penetration_testing": {
         "hours": 80, "phase": "specialization", "prerequisites": ["networking_fundamentals","linux"],
         "resources": [
-            {"title": "TryHackMe", "url": "https://tryhackme.com/"},
+            {"title": "picoCTF", "url": "https://picoctf.org/"},
             {"title": "Hack The Box", "url": "https://www.hackthebox.com/"},
             {"title": "PortSwigger Web Security Academy (free)", "url": "https://portswigger.net/web-security"},
             {"title": "OWASP Testing Guide (free)", "url": "https://owasp.org/www-project-web-security-testing-guide/"},
@@ -1244,7 +1251,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "database_design": {
         "hours": 30, "phase": "core", "prerequisites": ["sql"],
         "resources": [
-            {"title": "Database Design for Mere Mortals", "url": "https://www.oreilly.com/library/view/database-design-for/9780133122282/"},
+            {"title": "Database Design (LibreTexts)", "url": "https://eng.libretexts.org/Bookshelves/Computer_Science/Databases_and_Data_Structures"},
             {"title": "CMU 15-445 DB Internals (free)", "url": "https://15445.courses.cs.cmu.edu/fall2022/"},
         ],
         "why": "Poor schema design creates technical debt that haunts products for years.",
@@ -1423,7 +1430,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "proteomics": {
         "hours": 35, "phase": "specialization", "prerequisites": ["python","molecular_biology"],
         "resources": [
-            {"title": "Introduction to Proteomics (Coursera)", "url": "https://www.coursera.org/learn/proteomics"},
+            {"title": "ProteomicsDB Tutorials", "url": "https://www.proteomicsdb.org/proteomicsdb/#tutorials"},
             {"title": "UniProt Knowledge Base", "url": "https://www.uniprot.org/"},
             {"title": "Perseus Proteomics Platform", "url": "https://maxquant.net/perseus/"},
         ],
@@ -1478,7 +1485,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 50, "phase": "specialization", "prerequisites": ["java","apache_spark"],
         "resources": [
             {"title": "Scala Tour", "url": "https://docs.scala-lang.org/tour/tour-of-scala.html"},
-            {"title": "Rock the JVM (free tier)", "url": "https://rockthejvm.com/"},
+            {"title": "Scala Exercises", "url": "https://www.scala-exercises.org/"},
         ],
         "why": "Scala is the primary language of Spark and functional big-data engineering.",
         "tracks": ["data_science"],
@@ -1507,7 +1514,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "gcp": {
         "hours": 40, "phase": "specialization", "prerequisites": ["linux","docker"],
         "resources": [
-            {"title": "Google Cloud Skills Boost (free tier)", "url": "https://www.cloudskillsboost.google/"},
+            {"title": "Google Cloud Codelabs", "url": "https://codelabs.developers.google.com/?cat=Cloud"},
             {"title": "GCP Architecture Center", "url": "https://cloud.google.com/architecture"},
         ],
         "why": "GCP leads in ML infrastructure (TPUs, Vertex AI) - essential for AI-focused cloud roles.",
@@ -1628,7 +1635,7 @@ SKILL_GRAPH: dict[str, dict] = {
     "game_engine": {
         "hours": 80, "phase": "core", "prerequisites": ["python","linear_algebra"],
         "resources": [
-            {"title": "Unity Learn Premium (free)", "url": "https://learn.unity.com/"},
+            {"title": "Unity Learn", "url": "https://learn.unity.com/"},
             {"title": "Unreal Engine Docs", "url": "https://docs.unrealengine.com/"},
             {"title": "Godot Documentation", "url": "https://docs.godotengine.org/"},
         ],
@@ -1651,7 +1658,7 @@ SKILL_GRAPH: dict[str, dict] = {
         "hours": 40, "phase": "advanced", "prerequisites": ["linear_algebra","calculus","game_engine"],
         "resources": [
             {"title": "Game Physics Tutorial", "url": "https://gafferongames.com/"},
-            {"title": "Physics for Game Developers (O'Reilly)", "url": "https://www.oreilly.com/library/view/physics-for-game/9781449361037/"},
+            {"title": "The Nature of Code", "url": "https://natureofcode.com/"},
         ],
         "why": "Realistic physics simulations differentiate AAA games and are essential for immersive experiences.",
         "tracks": ["game_dev"],
@@ -1729,20 +1736,10 @@ SKILL_GRAPH: dict[str, dict] = {
         "tracks": ["data_engineering","backend","devops"],
         "salary_impact": "+$22k",
     },
-    "airflow": {
-        "hours": 30, "phase": "advanced", "prerequisites": ["python","docker","sql"],
-        "resources": [
-            {"title": "Apache Airflow Docs", "url": "https://airflow.apache.org/docs/"},
-            {"title": "Airflow: The Hands-On Guide (Udemy)", "url": "https://www.udemy.com/course/the-complete-hands-on-course-to-master-apache-airflow/"},
-        ],
-        "why": "Airflow is the standard workflow orchestrator for data pipelines and ETL at scale.",
-        "tracks": ["data_engineering","ml"],
-        "salary_impact": "+$18k",
-    },
     "excel_advanced": {
         "hours": 20, "phase": "foundation", "prerequisites": [],
         "resources": [
-            {"title": "Excel Skills for Business (Coursera)", "url": "https://www.coursera.org/specializations/excel"},
+            {"title": "Microsoft Excel Training", "url": "https://support.microsoft.com/en-us/excel"},
             {"title": "ExcelJet Functions", "url": "https://exceljet.net/"},
         ],
         "why": "Advanced Excel with pivot tables, Power Query, and VBA is required for many analyst roles.",
@@ -2107,16 +2104,23 @@ def _build_market_insight(skill_key: str, freq: float, job_pct: float, trend: st
         return f"{base} - a differentiating skill in competitive job searches."
 
 
+def _normalize_country_name(country: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", country.lower()).strip()
+
+
 def _load_ppp_multipliers() -> dict[str, float]:
-    """Load PPP multipliers from JSON file."""
-    import json
-    from pathlib import Path
+    """Load PPP multipliers from the bundled JSON file."""
     try:
         ppp_path = Path(__file__).parent / "ppp_data.json"
-        with open(ppp_path) as f:
-            data = json.load(f)
-        return data.get("multipliers", {})
+        with ppp_path.open(encoding="utf-8") as file_obj:
+            data = json.load(file_obj)
+        multipliers = {
+            _normalize_country_name(country): float(multiplier)
+            for country, multiplier in data.get("multipliers", {}).items()
+        }
+        return multipliers or {"default": 0.65}
     except Exception:
+        logger.exception("Failed to load PPP multiplier data; using default multiplier")
         return {"default": 0.65}
 
 
@@ -2127,14 +2131,23 @@ def get_ppp_multiplier(country: str) -> float:
     global _PPP_MULTIPLIERS
     if not _PPP_MULTIPLIERS:
         _PPP_MULTIPLIERS = _load_ppp_multipliers()
-    country_lower = country.lower().strip()
-    # Try exact match first
-    if country_lower in _PPP_MULTIPLIERS:
-        return _PPP_MULTIPLIERS[country_lower]
-    # Try partial match
-    for key, val in _PPP_MULTIPLIERS.items():
-        if key != "default" and (key in country_lower or country_lower in key):
-            return val
+
+    country_key = _normalize_country_name(country)
+    if not country_key:
+        return _PPP_MULTIPLIERS.get("default", 0.65)
+
+    exact_match = _PPP_MULTIPLIERS.get(country_key)
+    if exact_match is not None:
+        return exact_match
+
+    country_tokens = set(country_key.split())
+    for key, value in _PPP_MULTIPLIERS.items():
+        if key == "default" or len(key) < 4:
+            continue
+        key_tokens = set(key.split())
+        if key_tokens and (key_tokens <= country_tokens or country_tokens <= key_tokens):
+            return value
+
     return _PPP_MULTIPLIERS.get("default", 0.65)
 
 
@@ -2368,20 +2381,50 @@ class RoadmapEngine:
 
     def _local_currency_label(self, country: str) -> str:
         currency_map = {
-            "india": "INR", "brazil": "BRL", "mexico": "MXN", "china": "CNY",
-            "russia": "RUB", "south africa": "ZAR", "nigeria": "NGN", "kenya": "KES",
-            "indonesia": "IDR", "pakistan": "PKR", "bangladesh": "BDT", "vietnam": "VND",
-            "philippines": "PHP", "thailand": "THB", "malaysia": "MYR", "argentina": "ARS",
-            "colombia": "COP", "peru": "PEN", "ukraine": "UAH", "poland": "PLN",
-            "turkey": "TRY", "egypt": "EGP", "uk": "GBP", "united kingdom": "GBP",
-            "australia": "AUD", "new zealand": "NZD", "canada": "CAD", "japan": "JPY",
-            "south korea": "KRW", "singapore": "SGD", "switzerland": "CHF",
-            "sweden": "SEK", "norway": "NOK", "denmark": "DKK",
+            "argentina": "ARS",
+            "australia": "AUD",
+            "bangladesh": "BDT",
+            "brazil": "BRL",
+            "canada": "CAD",
+            "china": "CNY",
+            "colombia": "COP",
+            "denmark": "DKK",
+            "egypt": "EGP",
+            "india": "INR",
+            "indonesia": "IDR",
+            "japan": "JPY",
+            "kenya": "KES",
+            "malaysia": "MYR",
+            "mexico": "MXN",
+            "new zealand": "NZD",
+            "nigeria": "NGN",
+            "norway": "NOK",
+            "pakistan": "PKR",
+            "peru": "PEN",
+            "philippines": "PHP",
+            "poland": "PLN",
+            "russia": "RUB",
+            "singapore": "SGD",
+            "south africa": "ZAR",
+            "south korea": "KRW",
+            "sweden": "SEK",
+            "switzerland": "CHF",
+            "thailand": "THB",
+            "turkey": "TRY",
+            "uk": "GBP",
+            "ukraine": "UAH",
+            "united kingdom": "GBP",
+            "vietnam": "VND",
         }
-        cl = country.lower()
-        for k, v in currency_map.items():
-            if k in cl:
-                return v
+        country_key = _normalize_country_name(country)
+        exact_match = currency_map.get(country_key)
+        if exact_match:
+            return exact_match
+        country_tokens = set(country_key.split())
+        for key, value in currency_map.items():
+            key_tokens = set(key.split())
+            if key_tokens and (key_tokens <= country_tokens or country_tokens <= key_tokens):
+                return value
         return "USD"
 
     def _build_salary_bands(self, track_id: str | None, ppp: float, local_currency: str) -> list[SalaryBand]:
@@ -2631,9 +2674,12 @@ class RoadmapEngine:
             sc = s.get("country","").lower()
             elig = s.get("eligibility","").lower()
             score = 0.0
-            if cl in sc or sc in cl: score += 0.4
-            if any(w in sc for w in ["global","international"]): score += 0.2
-            if any(w in elig for w in ["stem","technology","science","engineering","computing"]): score += 0.3
+            if cl in sc or sc in cl:
+                score += 0.4
+            if any(w in sc for w in ["global", "international"]):
+                score += 0.2
+            if any(w in elig for w in ["stem", "technology", "science", "engineering", "computing"]):
+                score += 0.3
             if score > 0:
                 result.append(Scholarship(
                     name=s.get("name", ""), country=s.get("country", ""),
@@ -2660,9 +2706,12 @@ class RoadmapEngine:
             company = i.get("company", "").lower()
             location = i.get("location", "").lower()
             score = 0.0
-            if any(kw in title for kw in keywords): score += 0.5
-            if country.lower() in location or location in country.lower(): score += 0.3
-            if any(kw in company for kw in ["tech","ai","ml","data"]): score += 0.2
+            if any(kw in title for kw in keywords):
+                score += 0.5
+            if country.lower() in location or location in country.lower():
+                score += 0.3
+            if any(kw in company for kw in ["tech", "ai", "ml", "data"]):
+                score += 0.2
             if score >= 0.5:
                 scored.append((score, Internship(
                     title=i.get("title", ""), company=i.get("company", ""),
@@ -2746,10 +2795,6 @@ class RoadmapEngine:
 
 
 # ── Merged from: scheduler.py ──────────────────────────────────────
-from models import make_key, get as cache_get, set as cache_set, cleanup as cache_cleanup
-from models import update_job, finish_job, fail_job, record_metric as database_record_metric, create_job
-from career_intelligence_pipeline import Analyzer, _get_kw_model, _get_embed_model, extract_skills_regex, fetch_all_market_data
-
 _analyzer = None
 _progress: dict[str, dict] = {}
 _MAX_PROGRESS_ENTRIES = 500
@@ -2826,10 +2871,10 @@ async def run_job(job_id: str, req: RoadmapRequest) -> None:
         try:
             scores = await asyncio.wait_for(
                 loop.run_in_executor(None, functools.partial(_get_analyzer().analyze, market_data, req.goal, req.goal)),
-                timeout=360,
+                timeout=45,
             )
         except asyncio.TimeoutError:
-            logger.warning("Job %s: KeyBERT/analyzer timed out after 360s — falling back to regex-only extraction", job_id)
+            logger.warning("Job %s: analyzer timed out after 45s — falling back to regex-only extraction", job_id)
             await _emit(job_id, "running", 45, "NLP timed out — using fast skill extraction…")
             # Graceful fallback: build scores from regex extraction only, skip heavy NLP
             skill_freq: dict[str, int] = {}

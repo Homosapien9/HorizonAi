@@ -1,5 +1,5 @@
 """
-Horizon v4 — runtime configuration.
+Horizon v5 — runtime configuration.
 Small, dependency-light settings layer with sensible defaults.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     app_name: str = "Horizon"
     app_version: str = "5.0.0"
     app_description: str = (
-        "Horizon v5 — live career intelligence for 20+ tracks: engineering, internships, product, design, blockchain, quantum computing, game dev, and more."
+        "Horizon v5 — live career intelligence explicitly for Technical field and IT field: software engineering, data science, ML/AI, cloud architecture, cybersecurity, DevOps, and 20+ specialized tech tracks."
     )
     host: str = "0.0.0.0"
     port: int = 8000

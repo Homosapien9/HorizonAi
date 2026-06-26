@@ -3,11 +3,6 @@ Horizon v5 — Data Models, Database, Cache and Utilities
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Optional
-from pydantic import BaseModel, Field, computed_field, field_validator
-
 import asyncio
 import hashlib
 import html
@@ -15,11 +10,16 @@ import json
 import logging
 import re
 import time
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Optional
 
 import aiosqlite
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from config import settings
 
+_START_TIME = time.time()
 logger = logging.getLogger(__name__)
 
 
@@ -268,6 +268,84 @@ class MetricsResponse(BaseModel):
     popular_goals: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class RoadmapTable(BaseModel):
+    id: str
+    name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+    total_nodes: Optional[int] = None
+    created_at: Optional[datetime] = None
+
+
+class NodeTable(BaseModel):
+    id: str
+    roadmap_id: str
+    node_id: Optional[str] = None
+    label: Optional[str] = None
+    type: Optional[str] = None
+    position_x: Optional[float] = None
+    position_y: Optional[float] = None
+    description: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
+class EdgeTable(BaseModel):
+    id: str
+    roadmap_id: str
+    source: Optional[str] = None
+    target: Optional[str] = None
+    animated: Optional[bool] = False
+    label: Optional[str] = None
+
+
+class ResourceTable(BaseModel):
+    id: str
+    node_id: str
+    title: Optional[str] = None
+    url: Optional[str] = None
+    resource_type: Optional[str] = None
+    difficulty: Optional[str] = None
+    duration_hours: Optional[float] = None
+
+
+class UserProgressTable(BaseModel):
+    id: str
+    user_id: Optional[str] = None
+    node_id: Optional[str] = None
+    status: Optional[str] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class RoadmapApiResponse(BaseModel):
+    id: str
+    name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+
+
+class NodeApiResponse(BaseModel):
+    id: str
+    label: Optional[str] = None
+    type: Optional[str] = None
+    position: Optional[dict] = None
+    data: Optional[dict] = None
+
+
+class EdgeApiResponse(BaseModel):
+    id: str
+    source: Optional[str] = None
+    target: Optional[str] = None
+    animated: Optional[bool] = False
+    label: Optional[str] = None
+
+
+class NodeDetailsResponse(BaseModel):
+    node: Optional[dict] = None
+    resources: list[dict] = Field(default_factory=list)
+    prerequisites: list[dict] = Field(default_factory=list)
+
 
 _db_path = settings.database_path
 _db_initialized = False
@@ -314,6 +392,63 @@ CREATE TABLE IF NOT EXISTS metrics (
 CREATE INDEX IF NOT EXISTS idx_cache_created ON roadmap_cache(created_at);
 CREATE INDEX IF NOT EXISTS idx_jobs_status    ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_metrics_goal   ON metrics(goal);
+
+CREATE TABLE IF NOT EXISTS roadmaps (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    category TEXT,
+    description TEXT,
+    total_nodes INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS nodes (
+    id TEXT PRIMARY KEY,
+    roadmap_id TEXT NOT NULL REFERENCES roadmaps(id),
+    node_id TEXT,  -- from JSON
+    label TEXT,
+    type TEXT,  -- 'default', 'section', etc
+    position_x REAL,
+    position_y REAL,
+    description TEXT,
+    metadata JSON,
+    UNIQUE(roadmap_id, node_id)
+);
+
+CREATE TABLE IF NOT EXISTS edges (
+    id TEXT PRIMARY KEY,
+    roadmap_id TEXT NOT NULL REFERENCES roadmaps(id),
+    source TEXT,
+    target TEXT,
+    animated BOOLEAN DEFAULT FALSE,
+    label TEXT,
+    FOREIGN KEY(source) REFERENCES nodes(id),
+    FOREIGN KEY(target) REFERENCES nodes(id)
+);
+
+CREATE TABLE IF NOT EXISTS resources (
+    id TEXT PRIMARY KEY,
+    node_id TEXT NOT NULL REFERENCES nodes(id),
+    title TEXT,
+    url TEXT,
+    resource_type TEXT,  -- 'tutorial', 'documentation', 'course', etc
+    difficulty TEXT,  -- 'beginner', 'intermediate', 'advanced'
+    duration_hours REAL
+);
+
+CREATE TABLE IF NOT EXISTS user_progress (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    node_id TEXT REFERENCES nodes(id),
+    status TEXT,  -- 'not_started', 'in_progress', 'completed'
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_nodes_roadmap ON nodes(roadmap_id);
+CREATE INDEX IF NOT EXISTS idx_edges_roadmap ON edges(roadmap_id);
+CREATE INDEX IF NOT EXISTS idx_resources_node ON resources(node_id);
 """
 
 
@@ -559,8 +694,8 @@ async def cleanup() -> int:
         return 0
 
 
-# ── NO BASELINE DATASETS ──────────────────────────────────────────────────────
-# All data is now sourced live from online scraping. No fallbacks to static datasets.
+# ── DATA POLICY ───────────────────────────────────────────────────────────────
+# The system prefers free live APIs first and falls back to clearly labeled curated data.
 
 
 

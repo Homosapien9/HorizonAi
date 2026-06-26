@@ -1,0 +1,32 @@
+{
+  "nodes": [
+    {
+      "key": "6AIUtChWC_gK8Ax0UuBjd",
+      "type": "button",
+      "font_size": 17,
+      "width": 380,
+      "height": 49,
+      "position.x": -270.4421681530645,
+      "position.y": 4436.848821438938,
+      "selected": false,
+      "data.label": "Frontend",
+      "data.href": "https://roadmap.sh/frontend",
+      "data.color": "#FFf",
+      "data.backgroundColor": "#4136D6",
+      "data.borderColor": "#4136D6",
+      "data.oldId": "f5WRewBlpeYMf71cPcXs-",
+      "zIndex": 999,
+      "dragging": false,
+      "positionAbsolute.x": -270.4421681530645,
+      "positionAbsolute.y": 4436.848821438938,
+      "style.width": 380,
+      "style.height": 49,
+      "focusable": true,
+      "resizing": false,
+      "selectable": true,
+      "measured.width": 199,
+      "measured.height": 49
+    }
+  ],
+  "edges": []
+}
