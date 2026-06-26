@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" id="html-root">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Horizon — Technical Field and IT Career Intelligence Platform"/>
+  <title>{% block title %}Horizon — Technical & IT Field Career Intelligence{% endblock %}</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ink:    'var(--color-ink)',
+            paper:  'var(--color-paper)',
+            card:   'var(--color-card)',
+            border: 'var(--color-border)',
+            accent: '#4f8ef7',
+            lime:   '#a3e635',
+            amber:  '#fbbf24',
+            rose:   '#f43f5e',
+            muted:  'var(--color-muted)',
+            text:   'var(--color-text)',
+          },
+          fontFamily: {
+            sans:  ['"Inter"','system-ui','sans-serif'],
+            mono:  ['"JetBrains Mono"','monospace'],
+            head:  ['"Syne"','system-ui','sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Dark theme (default) */
+    :root[data-theme="dark"], html[data-theme="dark"] {
+      --color-ink:    #0a0a0f;
+      --color-paper:  #0f1117;
+      --color-card:   #161b27;
+      --color-border: #1f2d45;
+      --color-muted:  #4a6080;
+      --color-text:   #c9d8ef;
+    }
+    /* Light theme */
+    :root[data-theme="light"], html[data-theme="light"] {
+      --color-ink:    #f8faff;
+      --color-paper:  #eef2fb;
+      --color-card:   #ffffff;
+      --color-border: #c5d3e8;
+      --color-muted:  #6b84a8;
+      --color-text:   #1a2540;
+    }
+    body { background-color: var(--color-ink); color: var(--color-text); }
+    .bg-ink    { background-color: var(--color-ink) !important; }
+    .bg-paper  { background-color: var(--color-paper) !important; }
+    .bg-card   { background-color: var(--color-card) !important; }
+    .border-border { border-color: var(--color-border) !important; }
+    .text-text { color: var(--color-text) !important; }
+    .text-muted { color: var(--color-muted) !important; }
+    /* Sparkline canvas */
+    .sparkline { display: inline-block; vertical-align: middle; }
+    /* Transition for theme switch */
+    body, header, .bg-card, .bg-paper, .bg-ink {
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="/static/app.css"/>
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="font-sans min-h-screen antialiased selection:bg-accent/30">
+
+  <!-- Navigation -->
+  <header class="fixed top-0 inset-x-0 z-50 h-14 flex items-center border-b border-border bg-ink/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto w-full px-6 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5 group">
+        <div class="w-7 h-7 rounded bg-accent flex items-center justify-center shadow-lg shadow-accent/30 group-hover:shadow-accent/50 transition-shadow">
+          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 1L1 6v9h5v-5h4v5h5V6L8 1z"/>
+          </svg>
+        </div>
+        <span class="font-head text-text font-semibold tracking-tight">Horizon</span>
+        <span class="text-[10px] font-mono text-muted bg-card border border-border px-1.5 py-0.5 rounded">v5</span>
+      </a>
+      <nav class="hidden sm:flex items-center gap-5 text-xs font-mono text-muted">
+        <a href="/"        class="hover:text-accent transition-colors">roadmap</a>
+        <a href="/search"  class="hover:text-accent transition-colors">live search</a>
+        <a href="/compare" class="hover:text-accent transition-colors">compare</a>
+        <a href="/" onclick="setTimeout(()=>{document.getElementById('intern-query')&&document.getElementById('intern-query').focus()},400); return true;"
+           class="hover:text-lime transition-colors text-lime font-semibold">🎓 internships</a>
+        <a href="/health"  class="hover:text-accent transition-colors">health</a>
+        <a href="/docs" class="hover:text-accent transition-colors">api</a>
+        <!-- Dark/Light Toggle -->
+        <button id="theme-toggle" onclick="toggleTheme()"
+          class="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-card hover:border-accent transition-colors"
+          title="Toggle dark/light mode">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label" class="hidden sm:inline">dark</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="pt-14">{% block content %}{% endblock %}</main>
+
+  <footer class="mt-24 border-t border-border py-6 text-center">
+    <p class="text-xs font-mono text-muted/60">Horizon v5 — evidence-backed Technical & IT career intelligence — 62 specialized tracks including software engineering, data science, DevOps, security, cloud, and emerging tech</p>
+  </footer>
+
+  <script>
+    // ── Theme toggle ────────────────────────────────────────────────────────
+    function applyTheme(theme) {
+      const root = document.getElementById('html-root');
+      root.setAttribute('data-theme', theme);
+      const icon = document.getElementById('theme-icon');
+      const label = document.getElementById('theme-label');
+      if (icon)  icon.textContent  = theme === 'dark' ? '🌙' : '☀️';
+      if (label) label.textContent = theme === 'dark' ? 'dark' : 'light';
+      localStorage.setItem('hz-theme', theme);
+    }
+    function toggleTheme() {
+      const current = document.getElementById('html-root').getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+    // Apply saved preference immediately
+    (function() {
+      const saved = localStorage.getItem('hz-theme') || 'dark';
+      applyTheme(saved);
+    })();
+  </script>
+</body>
+</html>

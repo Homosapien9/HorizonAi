@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+{% block title %}Horizon — Technical & IT Field Career Intelligence{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="relative min-h-[92vh] flex flex-col items-center justify-center px-6 overflow-hidden">
+  <div class="absolute inset-0 dot-grid opacity-40 pointer-events-none"></div>
+  <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent"></div>
+
+  <div class="relative z-10 max-w-3xl w-full mx-auto text-center">
+    <div class="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border bg-card/60 backdrop-blur px-3 py-1.5 rounded-full mb-10">
+      <span class="w-1.5 h-1.5 rounded-full bg-lime animate-pulse"></span>
+      Live data · refreshed every 6h · 5 public sources
+    </div>
+
+    <h1 class="font-head text-5xl sm:text-[64px] leading-[1.05] font-extrabold text-text mb-5 tracking-tight">
+      Your Technical & IT career,<br/>
+      <span class="text-accent">evidence-backed.</span>
+    </h1>
+
+    <p class="text-base sm:text-lg text-muted max-w-xl mx-auto mb-12 leading-relaxed font-light">
+      Horizon analyzes GitHub Trending, Hacker News hiring, arXiv papers and job boards
+      in real time — then builds a personalized technical roadmap ranked by actual market demand for software engineering, data science, DevOps, security, and emerging tech.
+    </p>
+
+    <!-- Form card -->
+    <div class="bg-card border border-border rounded-2xl p-7 text-left shadow-2xl shadow-black/30 max-w-2xl mx-auto">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="font-head text-text font-semibold text-lg">Build your roadmap</h2>
+        <span class="text-[10px] font-mono text-muted">free · no signup</span>
+      </div>
+
+      <form id="roadmap-form" class="space-y-4">
+        <!-- Goal with category tabs -->
+        <div>
+          <label class="form-label">Career goal</label>
+          <input id="goal" name="goal" type="text" required
+            placeholder="e.g. ML Engineer, SWE Intern, Product Manager, Game Developer…"
+            class="form-input"/>
+
+          <!-- Role category tabs -->
+          <div class="mt-3 space-y-2">
+            <div class="flex gap-1.5 flex-wrap">
+               <button type="button" onclick="setCategory('engineering')"
+                 id="cat-engineering"
+                 class="cat-btn active text-[10px] font-mono px-2.5 py-1 rounded border border-accent/40 bg-accent/10 text-accent transition-all">
+                 💻 Software Engineering
+               </button>
+               <button type="button" onclick="setCategory('data')"
+                 id="cat-data"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-accent/40 hover:text-accent transition-all">
+                 🤖 Data & AI
+               </button>
+               <button type="button" onclick="setCategory('devops')"
+                 id="cat-devops"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-lime/40 hover:text-lime transition-all">
+                 ⚡ DevOps & Cloud
+               </button>
+               <button type="button" onclick="setCategory('security')"
+                 id="cat-security"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-rose/40 hover:text-rose transition-all">
+                 🔒 Cybersecurity
+               </button>
+               <button type="button" onclick="setCategory('emerging')"
+                 id="cat-emerging"
+                 class="cat-btn text-[10px] font-mono px-2.5 py-1 rounded border border-border text-muted hover:border-amber/40 hover:text-amber transition-all">
+                 🚀 Emerging Tech
+               </button>
+            </div>
+
+            <!-- Dynamic quick-pick chips -->
+            <div id="quick-chips" class="flex flex-wrap gap-1.5">
+              <!-- injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Level + Country -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">Current level</label>
+            <select name="skill_level" class="form-input appearance-none select-arrow">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Country <span class="text-muted font-normal text-[10px]">(for local salary)</span></label>
+            <input name="country" id="country-input" type="text" required placeholder="USA, UK, India…" class="form-input"/>
+          </div>
+        </div>
+
+        <!-- Weekly hours -->
+        <div>
+          <label class="form-label flex justify-between">
+            <span>Weekly study hours</span>
+            <span id="hrs-val" class="font-mono text-accent">10h</span>
+          </label>
+          <input name="weekly_hours" type="range" min="1" max="80" value="10"
+            oninput="document.getElementById('hrs-val').textContent=this.value+'h'"
+            class="range-input w-full"/>
+          <div class="flex justify-between text-[10px] font-mono text-muted/50 mt-1">
+            <span>1h</span><span>40h</span><span>80h</span>
+          </div>
+        </div>
+
+
+        <!-- Submit -->
+        <button id="submit-btn" type="submit"
+          class="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-all text-sm shadow-lg shadow-accent/20 hover:shadow-accent/40 flex items-center justify-center gap-2 mt-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Generate roadmap
+        </button>
+        <p id="form-error" class="hidden text-rose text-xs mt-2 font-mono"></p>
+      </form>
+    </div>
+
+    <!-- Trust row -->
+    <div class="mt-8 flex flex-wrap justify-center gap-5 text-[11px] font-mono text-muted/70">
+      <span>✓ No API keys</span>
+      <span>✓ No paid services</span>
+      <span>✓ CPU-only · runs on Codespaces</span>
+            <span>✓ PPP-adjusted salary data</span>
+      <span>✓ Internship tracker</span>
+    </div>
+  </div>
+</section>
+
+<!-- Role Categories Showcase -->
+<section class="max-w-7xl mx-auto px-6 pb-16">
+  <div class="text-center mb-8">
+    <h2 class="font-head text-2xl font-bold text-text mb-2">20+ career tracks, from intern to architect</h2>
+    <p class="text-sm text-muted font-light">Every roadmap is driven by live market data, not static templates.</p>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+    <!-- Internship card -->
+    <div class="bg-card border border-lime/20 rounded-xl p-5 hover:border-lime/50 transition-all group cursor-pointer"
+         onclick="setGoalAndScroll('SWE Intern')">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-lime/20 border border-lime/30 flex items-center justify-center text-base">🎓</div>
+        <span class="text-[10px] font-mono text-lime uppercase tracking-wider">Internship</span>
+      </div>
+      <h3 class="font-head text-sm font-bold text-text mb-1 group-hover:text-lime transition-colors">SWE / ML / Data Intern</h3>
+      <p class="text-[11px] text-muted leading-relaxed">Land top tech internships at FAANG and unicorns with a targeted skill plan.</p>
+      <div class="mt-3 flex flex-wrap gap-1">
+        <span class="text-[9px] font-mono border border-lime/20 text-lime/70 px-1.5 py-0.5 rounded">SWE Intern</span>
+        <span class="text-[9px] font-mono border border-lime/20 text-lime/70 px-1.5 py-0.5 rounded">ML Intern</span>
+        <span class="text-[9px] font-mono border border-lime/20 text-lime/70 px-1.5 py-0.5 rounded">Data Intern</span>
+      </div>
+    </div>
+
+    <!-- ML / AI card -->
+    <div class="bg-card border border-accent/20 rounded-xl p-5 hover:border-accent/50 transition-all group cursor-pointer"
+         onclick="setGoalAndScroll('ML Engineer')">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-base">🤖</div>
+        <span class="text-[10px] font-mono text-accent uppercase tracking-wider">AI / ML</span>
+      </div>
+      <h3 class="font-head text-sm font-bold text-text mb-1 group-hover:text-accent transition-colors">ML / AI Engineer</h3>
+      <p class="text-[11px] text-muted leading-relaxed">Build and deploy models with PyTorch, MLOps, and real production systems.</p>
+      <div class="mt-3 flex flex-wrap gap-1">
+        <span class="text-[9px] font-mono border border-accent/20 text-accent/70 px-1.5 py-0.5 rounded">ML Engineer</span>
+        <span class="text-[9px] font-mono border border-accent/20 text-accent/70 px-1.5 py-0.5 rounded">AI Researcher</span>
+        <span class="text-[9px] font-mono border border-accent/20 text-accent/70 px-1.5 py-0.5 rounded">Data Scientist</span>
+      </div>
+    </div>
+
+    <!-- Product / Design card -->
+    <div class="bg-card border border-amber/20 rounded-xl p-5 hover:border-amber/50 transition-all group cursor-pointer"
+         onclick="setGoalAndScroll('Product Manager')">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-amber/20 border border-amber/30 flex items-center justify-center text-base">🧩</div>
+        <span class="text-[10px] font-mono text-amber uppercase tracking-wider">Product & Design</span>
+      </div>
+      <h3 class="font-head text-sm font-bold text-text mb-1 group-hover:text-amber transition-colors">PM / UX Designer</h3>
+      <p class="text-[11px] text-muted leading-relaxed">Drive product strategy or design user experiences that millions love.</p>
+      <div class="mt-3 flex flex-wrap gap-1">
+        <span class="text-[9px] font-mono border border-amber/20 text-amber/70 px-1.5 py-0.5 rounded">Product Manager</span>
+        <span class="text-[9px] font-mono border border-amber/20 text-amber/70 px-1.5 py-0.5 rounded">UX Designer</span>
+      </div>
+    </div>
+
+    <!-- Emerging Tech card -->
+    <div class="bg-card border border-rose/20 rounded-xl p-5 hover:border-rose/50 transition-all group cursor-pointer"
+         onclick="setGoalAndScroll('Blockchain Developer')">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-rose/20 border border-rose/30 flex items-center justify-center text-base">🚀</div>
+        <span class="text-[10px] font-mono text-rose uppercase tracking-wider">Emerging</span>
+      </div>
+      <h3 class="font-head text-sm font-bold text-text mb-1 group-hover:text-rose transition-colors">Web3 / Quantum / Game</h3>
+      <p class="text-[11px] text-muted leading-relaxed">Get ahead on the frontier — Blockchain, Quantum Computing, and Game Dev.</p>
+      <div class="mt-3 flex flex-wrap gap-1">
+        <span class="text-[9px] font-mono border border-rose/20 text-rose/70 px-1.5 py-0.5 rounded">Blockchain</span>
+        <span class="text-[9px] font-mono border border-rose/20 text-rose/70 px-1.5 py-0.5 rounded">Quantum</span>
+        <span class="text-[9px] font-mono border border-rose/20 text-rose/70 px-1.5 py-0.5 rounded">Game Dev</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JD Scanner card -->
+<section class="max-w-3xl mx-auto px-6 pb-16">
+  <div class="bg-card border border-border rounded-2xl p-7 shadow-xl shadow-black/20">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-8 h-8 rounded-lg bg-lime/20 border border-lime/30 flex items-center justify-center text-lime text-base">🎯</div>
+      <div>
+        <h2 class="font-head text-text font-semibold">Job Description Scanner</h2>
+        <p class="text-xs text-muted font-light">Paste a JD or URL → instantly extract required skills and estimate how long each one may take to learn</p>
+      </div>
+    </div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="form-label">Job posting URL <span class="text-muted font-normal">(optional)</span></label>
+          <input id="jd-url" type="url" placeholder="https://jobs.example.com/ml-engineer" class="form-input"/>
+        </div>
+        <div>
+          <label class="form-label">Paste JD text <span class="text-muted font-normal">(or paste directly)</span></label>
+          <textarea id="jd-text" rows="4" placeholder="Paste the full job description here…"
+            class="form-input resize-none font-mono text-xs"></textarea>
+        </div>
+      </div>
+      <button onclick="runJdScan()"
+        class="w-full bg-lime/20 hover:bg-lime/30 border border-lime/40 text-lime font-semibold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Scan this job
+      </button>
+    </div>
+    <!-- JD Results -->
+    <div id="jd-results" class="hidden mt-6 space-y-4"></div>
+  </div>
+</section>
+
+<!-- Internship Hunt Section -->
+<section class="max-w-7xl mx-auto px-6 pb-16">
+  <div class="bg-gradient-to-br from-lime/5 to-accent/5 border border-lime/20 rounded-2xl p-7">
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-lime/20 border border-lime/30 flex items-center justify-center text-xl">🎓</div>
+        <div>
+          <h2 class="font-head text-text font-bold text-lg">Internship Hunt Mode</h2>
+          <p class="text-xs text-muted">Live internship listings + readiness score for each role</p>
+        </div>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <input id="intern-query" type="text" placeholder="e.g. ML intern, SWE intern, data intern…"
+          class="form-input text-sm w-56"/>
+        <input id="intern-country" type="text" placeholder="Country" class="form-input text-sm w-28"/>
+        <button onclick="searchInternships()"
+          class="bg-lime/20 border border-lime/40 text-lime px-4 py-2 rounded-lg text-sm font-semibold hover:bg-lime/30 transition-all">
+          Search
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick intern role chips -->
+    <div class="flex flex-wrap gap-2 mb-5">
+      {% for role in ["SWE Intern","ML Intern","Data Analyst Intern","DevOps Intern","Security Intern","Product Intern","Design Intern","Research Intern"] %}
+      <span class="text-[10px] font-mono border border-lime/20 text-lime/70 px-2.5 py-1 rounded-full hover:border-lime/50 hover:text-lime cursor-pointer transition-all"
+            onclick="quickInternSearch('{{ role }}')">{{ role }}</span>
+      {% endfor %}
+    </div>
+
+    <!-- Results container -->
+    <div id="intern-results" class="space-y-3">
+      <div class="text-xs font-mono text-muted/60 text-center py-6">
+        🔍 Search for internships above or click a role chip to see live listings
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="max-w-7xl mx-auto px-6 pb-28">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    {% set cards = [
+      ("01","Live scraping","GitHub Trending, HN hiring, arXiv CS, RemoteOK and WeWorkRemotely — scraped concurrently every 6 hours."),
+      ("02","NLP scoring","KeyBERT extracts skills; sentence-transformers rank them by frequency, trend velocity, and goal relevance."),
+      ("03","DAG resolution","A topological sort ensures every prerequisite is sequenced correctly before the skills that depend on it."),
+      ("04","Roadmap synthesis","Roadmaps are assembled from live market signals, dependency ordering, and source-backed prioritisation."),
+    ] %}
+    {% for num, title, desc in cards %}
+    <div class="bg-card border border-border rounded-xl p-5 hover:border-accent/30 transition-colors group">
+      <div class="font-mono text-[10px] text-muted mb-3 group-hover:text-accent/70 transition-colors">{{ num }}</div>
+      <h3 class="font-head text-text font-semibold text-sm mb-2">{{ title }}</h3>
+      <p class="text-xs text-muted leading-relaxed font-light">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+// ── Category quick-chip data ─────────────────────────────────────────────────
+const CATEGORIES = {
+  engineering: ["ML Engineer","Backend Engineer","Frontend Developer","DevOps Engineer","Data Engineer","Cloud Architect","Software Architect","System Architect"],
+  data:        ["Data Scientist","ML Engineer","AI Researcher","Data Engineer","Analytics Engineer","Bioinformatics Researcher"],
+  devops:      ["DevOps Engineer","SRE","Site Reliability Engineer","Cloud Engineer","Kubernetes Engineer","Infrastructure Engineer"],
+  security:    ["Cybersecurity Engineer","Security Engineer","Security Analyst","Penetration Tester","Security Architect"],
+  emerging:    ["Blockchain Developer","Quantum Computing Engineer","Game Developer","Web3 Developer","AR/VR Engineer","Metaverse Engineer"],
+};
+
+let currentCategory = 'engineering';
+
+const colorMap = {engineering:'accent',data:'accent',devops:'lime',security:'rose',emerging:'amber'};
+
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    b.classList.remove('active');
+    // reset styles
+    b.className = b.className
+      .replace(/border-\w+\/40|bg-\w+\/10|text-(?:accent|lime|amber|rose)\b/g,'')
+      .trim() + ' border-border text-muted';
+  });
+  const btn = document.getElementById('cat-' + cat);
+  if(btn) {
+    btn.classList.remove('border-border','text-muted');
+    const c = colorMap[cat] || 'accent';
+    btn.classList.add(`border-${c}/40`,`bg-${c}/10`,`text-${c}`);
+  }
+  renderChips(cat);
+}
+
+function renderChips(cat) {
+  const chips = CATEGORIES[cat] || [];
+  const container = document.getElementById('quick-chips');
+  const colorMap = {engineering:'accent',internship:'lime',data:'accent',product:'amber',emerging:'rose'};
+  const c = colorMap[cat] || 'accent';
+  container.innerHTML = chips.map(g =>
+    `<button type="button" onclick="document.getElementById('goal').value='${g}'"
+      class="text-[10px] font-mono border border-${c}/30 text-${c}/70 px-2 py-0.5 rounded-full hover:border-${c}/60 hover:text-${c} transition-colors">
+      ${g}
+    </button>`
+  ).join('');
+}
+
+// Initialize with engineering chips
+renderChips('engineering');
+
+function setGoalAndScroll(goal) {
+  document.getElementById('goal').value = goal;
+  document.getElementById('roadmap-form').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('goal').focus();
+}
+
+// ── Form submit ─────────────────────────────────────────────────────────────
+document.getElementById('roadmap-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const err = document.getElementById('form-error');
+  err.classList.add('hidden');
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Generating…';
+  try {
+    const resp = await fetch('/generate', { method:'POST', body: new FormData(e.target) });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Server error');
+    window.location.href = `/loading/${data.job_id}`;
+  } catch(ex) {
+    err.textContent = ex.message;
+    err.classList.remove('hidden');
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate roadmap';
+  }
+});
+
+function escHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeUrl(value) {
+  const url = String(value || '').trim();
+  return /^https?:\/\//i.test(url) ? url : '#';
+}
+
+// ── JD Scanner ───────────────────────────────────────────────────────────────
+async function runJdScan() {
+  const jdText = document.getElementById('jd-text').value.trim();
+  const jdUrl  = document.getElementById('jd-url').value.trim();
+  const resultsDiv = document.getElementById('jd-results');
+
+  if (!jdText && !jdUrl) {
+    alert('Please paste a job description or enter a URL.');
+    return;
+  }
+
+  resultsDiv.innerHTML = '<div class="text-xs font-mono text-muted animate-pulse">⏳ Scanning job description…</div>';
+  resultsDiv.classList.remove('hidden');
+
+  const fd = new FormData();
+  fd.append('jd_text', jdText);
+  fd.append('jd_url', jdUrl);
+  fd.append('weekly_hours', '10');
+
+  try {
+    const resp = await fetch('/api/jd-scan', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Scan failed');
+    renderJdResults(data, resultsDiv);
+  } catch(ex) {
+    resultsDiv.innerHTML = `<p class="text-rose text-xs font-mono">✗ ${escHtml(ex.message)}</p>`;
+  }
+}
+
+function renderJdResults(data, container) {
+  const skills = data.required_skills || data.jd_skills || [];
+  const totalWeeks = data.total_weeks_to_close || 0;
+
+  let skillsHtml = '';
+  if (skills.length) {
+    skillsHtml = skills.map(sk => {
+      const wks = data.weeks_per_skill?.[sk] || 1;
+      return `<div class="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
+        <span class="text-xs text-text font-mono">${escHtml(sk)}</span>
+        <span class="text-[10px] font-mono text-amber">${escHtml(String(wks))}w baseline</span>
+      </div>`;
+    }).join('');
+  } else {
+    skillsHtml = '<p class="text-xs text-muted font-mono">No clear skill requirements were extracted from this description.</p>';
+  }
+
+  container.innerHTML = `
+    <div class="flex items-center gap-4 p-4 bg-paper border border-border rounded-xl">
+      <div class="text-center">
+        <div class="font-head text-3xl font-bold text-accent">${escHtml(String(skills.length))}</div>
+        <div class="text-[10px] font-mono text-muted">skills found</div>
+      </div>
+      <div class="flex-1">
+        <div class="text-sm text-text font-semibold mb-1">Estimated baseline: ~${escHtml(String(totalWeeks))} weeks at 10h/week</div>
+        <div class="text-xs text-muted">This estimate assumes you are starting fresh for the extracted requirements.</div>
+      </div>
+    </div>
+    <div class="p-4 bg-paper border border-border rounded-xl">
+      <h4 class="text-xs font-mono text-muted uppercase tracking-wider mb-3">Required skills</h4>
+      ${skillsHtml}
+    </div>
+  `;
+}
+
+// ── Internship Search ─────────────────────────────────────────────────────────
+function quickInternSearch(role) {
+  document.getElementById('intern-query').value = role;
+  searchInternships();
+}
+
+async function searchInternships() {
+  const q = document.getElementById('intern-query').value.trim() || 'software engineering intern';
+  const country = document.getElementById('intern-country').value.trim() || 'USA';
+  const container = document.getElementById('intern-results');
+
+  container.innerHTML = `
+    <div class="flex items-center justify-center gap-2 py-8 text-muted text-sm font-mono">
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+      Searching live listings for "${escHtml(q)}"…
+    </div>`;
+
+  try {
+    const r = await fetch(`/api/internships?q=${encodeURIComponent(q)}&country=${encodeURIComponent(country)}&limit=15`);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Search failed');
+
+    const allRoles = data.internships || [];
+
+    if (!allRoles.length) {
+      container.innerHTML = `<div class="text-xs font-mono text-muted text-center py-6">No internship listings found right now — try a different query.</div>`;
+      return;
+    }
+
+    const statsBar = `<div class="flex flex-wrap gap-4 text-xs font-mono text-muted mb-4">
+      <span class="text-lime">✓ ${allRoles.length} listings found</span>
+      <span>Sources: ${(data.sources_active||[]).join(', ') || 'multiple'}</span>
+    </div>`;
+
+    const cards = allRoles.map(j => {
+      const title = j.title || 'Internship';
+      const company = j.company || '';
+      const location = j.remote ? '🌍 Remote' : (j.location || 'Location TBC');
+      const url = safeUrl(j.url);
+      const source = j.source || '';
+      const stipend = j.stipend || (j.salary_min ? `$${(j.salary_min/1000).toFixed(0)}k` : '');
+      const duration = j.duration || '';
+      return `<a href="${url}" target="_blank" rel="noopener"
+          class="block bg-card border border-lime/10 hover:border-lime/30 rounded-xl p-4 transition-all group">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-text group-hover:text-lime transition-colors truncate">${escHtml(title)}</div>
+              <div class="text-xs text-muted mt-0.5">${escHtml(company)}${company && location ? ' · ' : ''}${escHtml(location)}</div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              ${stipend ? `<div class="text-xs font-mono text-lime">${escHtml(stipend)}</div>` : ''}
+              ${duration ? `<div class="text-[10px] font-mono text-muted/60">${escHtml(duration)}</div>` : ''}
+            </div>
+          </div>
+          ${source ? `<div class="mt-2 text-[10px] font-mono text-muted/50">${escHtml(source)}</div>` : ''}
+        </a>`;
+    }).join('');
+
+    container.innerHTML = statsBar + `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>`;
+
+  } catch (ex) {
+    container.innerHTML = `<p class="text-rose text-xs font-mono text-center py-4">✗ ${ex.message}</p>`;
+  }
+}
+</script>
+{% endblock %}

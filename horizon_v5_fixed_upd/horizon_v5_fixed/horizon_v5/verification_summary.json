@@ -1,0 +1,117 @@
+{
+  "health": {
+    "status": "healthy",
+    "version": "5.0.0",
+    "app_name": "Horizon",
+    "uptime_seconds": 0.7,
+    "database_path": "/home/user/work/horizon_v5.4/horizon_v5/horizon.db"
+  },
+  "pages": {
+    "/": 200,
+    "/search": 200,
+    "/compare": 200,
+    "/career-intelligence": 200
+  },
+  "generate": {
+    "status": "pending",
+    "job_id": "37c50d57adb7493fa9577e74adfdf9a1",
+    "progress_url": "/api/job/37c50d57adb7493fa9577e74adfdf9a1",
+    "roadmap_url": "/roadmap/37c50d57adb7493fa9577e74adfdf9a1"
+  },
+  "job": {
+    "status": "complete",
+    "roadmap_code": 200,
+    "top_skill": "Python"
+  },
+  "career_queries": [
+    {
+      "query": "Software Engineer",
+      "jobs": 1,
+      "skills": 11,
+      "data_sources": 5,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Data Scientist",
+      "jobs": 1,
+      "skills": 12,
+      "data_sources": 5,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Mechanical Engineer",
+      "jobs": 1,
+      "skills": 12,
+      "data_sources": 5,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Civil Engineer",
+      "jobs": 1,
+      "skills": 12,
+      "data_sources": 5,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Cybersecurity Analyst",
+      "jobs": 6,
+      "skills": 6,
+      "data_sources": 4,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Electrical Engineer",
+      "jobs": 6,
+      "skills": 6,
+      "data_sources": 4,
+      "partial_results": false,
+      "notice": ""
+    },
+    {
+      "query": "Nurse",
+      "jobs": 0,
+      "skills": 0,
+      "data_sources": 1,
+      "partial_results": true,
+      "notice": "Horizon v5 is configured for technical fields only. The request was handled gracefully, but the role does not look primarily technical, so only limited guidance is returned."
+    },
+    {
+      "query": "asdkjhaskjdh",
+      "jobs": 0,
+      "skills": 0,
+      "data_sources": 1,
+      "partial_results": true,
+      "notice": "Horizon v5 is configured for technical fields only. The request was handled gracefully, but the role does not look primarily technical, so only limited guidance is returned."
+    }
+  ],
+  "other": {
+    "jobs_total": 1,
+    "live_total_jobs": 1,
+    "internships_count": 2,
+    "jd_scan_skills": [
+      "docker",
+      "kubernetes",
+      "python",
+      "sql"
+    ],
+    "resume_skills": [
+      "docker",
+      "git",
+      "python",
+      "sql"
+    ],
+    "compare_tracks": [
+      "Machine Learning Engineer",
+      "Data Scientist"
+    ],
+    "skills_suggestions": [
+      "Python",
+      "Pytorch"
+    ]
+  }
+}
